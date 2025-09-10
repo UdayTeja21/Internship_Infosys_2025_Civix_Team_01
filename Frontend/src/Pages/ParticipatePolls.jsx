@@ -1,7 +1,7 @@
 import { BarChart3, Vote } from 'lucide-react';
 import React from 'react';
 
-const ParticipatePolls: React.FC = () => {
+const ParticipatePolls = () => {
   return (
     <div className="flex-1 p-6">
       <div className="mb-6">

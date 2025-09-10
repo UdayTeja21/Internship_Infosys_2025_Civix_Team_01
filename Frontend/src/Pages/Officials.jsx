@@ -1,26 +1,7 @@
-
-// const Officials = () => {
-//   return (
-//     <div className="flex-1 p-6">
-//       <div className="mb-6">
-//         <h1 className="text-2xl font-bold text-gray-800 mb-2">Officials</h1>
-//         <p className="text-gray-600">Connect with your elected representatives and track their responses.</p>
-//       </div>
-
-//     </div>
-//   );
-// };
-
-// export default Officials;
-
-
-
-
-
 import { Users } from 'lucide-react';
 import React from 'react';
 
-const Officials: React.FC = () => {
+const Officials = () => {
   return (
     <div className="flex-1 p-6">
       <div className="mb-6">

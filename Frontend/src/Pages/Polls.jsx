@@ -1,22 +1,9 @@
 import { Plus, X } from 'lucide-react';
 import React, { useState } from 'react';
 
-interface Poll {
-  id: string;
-  question: string;
-  description: string;
-  options: string[];
-  closesOn: string;
-  votes: number[];
-  totalVotes: number;
-  hasVoted: boolean;
-  location: string;
-  isMyPoll: boolean;
-}
-
-const Polls: React.FC = () => {
+const Polls = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [polls, setPolls] = useState<Poll[]>([]);
+  const [polls, setPolls] = useState([]);
   const [activeTab, setActiveTab] = useState('Active Polls');
 
   // Form state
@@ -33,13 +20,13 @@ const Polls: React.FC = () => {
     }
   };
 
-  const removeOption = (index: number) => {
+  const removeOption = (index) => {
     if (pollOptions.length > 2) {
       setPollOptions(pollOptions.filter((_, i) => i !== index));
     }
   };
 
-  const updateOption = (index: number, value: string) => {
+  const updateOption = (index, value) => {
     const newOptions = [...pollOptions];
     newOptions[index] = value;
     setPollOptions(newOptions);
@@ -51,7 +38,7 @@ const Polls: React.FC = () => {
       return;
     }
 
-    const newPoll: Poll = {
+    const newPoll = {
       id: Date.now().toString(),
       question: pollQuestion.trim(),
       description: pollDescription.trim(),
@@ -74,7 +61,7 @@ const Polls: React.FC = () => {
     setShowCreateModal(false);
   };
 
-  const voteOnPoll = (pollId: string, optionIndex: number) => {
+  const voteOnPoll = (pollId, optionIndex) => {
     setPolls(polls.map(poll => {
       if (poll.id === pollId && !poll.hasVoted) {
         const newVotes = [...poll.votes];
@@ -378,219 +365,8 @@ const Polls: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* Create Poll Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Create a new poll</h2>
-              <button 
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-6">
-                Create a new poll to gather community feedback on local issues
-              </p>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Poll Question
-                </label>
-                <input
-                  type="text"
-                  value={pollQuestion}
-                  onChange={(e) => setPollQuestion(e.target.value)}
-                  placeholder="What do you want to ask the community?"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Keep your question clear and specific.</p>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={pollDescription}
-                  onChange={(e) => setPollDescription(e.target.value)}
-                  placeholder="Provide more context about the poll..."
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Give community members enough information to make an informed choice.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Poll Options
-                  </label>
-                  <div className="space-y-2">
-                    {pollOptions.map((option, index) => (
-                      <div key={index} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) => updateOption(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                          className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        {pollOptions.length > 2 && (
-                          <button
-                            onClick={() => removeOption(index)}
-                            className="p-2 text-red-500 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    {pollOptions.length < 10 && (
-                      <button
-                        onClick={addOption}
-                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 p-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Option
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Add at least 2 options, up to a maximum of 10
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Closes On
-                  </label>
-                  <input
-                    type="date"
-                    value={closesOn}
-                    onChange={(e) => setClosesOn(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Choose when this poll will close
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 rounded-full p-1 mt-0.5">
-                    <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">!</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-green-800 mb-1">Important information</h4>
-                    <p className="text-sm text-green-700">
-                      Polls should be designed to gather genuine community feedback on 
-                      issues that affect your area. Polls that are misleading or 
-                      designed to push a specific agenda may be removed.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-6 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={createPoll}
-                  className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors"
-                >
-                  Create Poll
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default Polls;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { BarChart3 } from 'lucide-react';
-// import React from 'react';
-
-// const Polls: React.FC = () => {
-//   return (
-//     <div className="flex-1 p-6">
-//       <div className="mb-6">
-//         <h1 className="text-2xl font-bold text-gray-800 mb-2">Polls</h1>
-//         <p className="text-gray-600">Participate in community polls and see public opinion.</p>
-//       </div>
-      
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-//         <div className="bg-white p-6 rounded-lg shadow-sm border">
-//           <h3 className="text-lg font-semibold text-gray-700 mb-2">Active Polls</h3>
-//           <div className="text-2xl font-bold text-blue-600">5</div>
-//           <div className="text-sm text-gray-500">Available to vote</div>
-//         </div>
-//         <div className="bg-white p-6 rounded-lg shadow-sm border">
-//           <h3 className="text-lg font-semibold text-gray-700 mb-2">Completed Polls</h3>
-//           <div className="text-2xl font-bold text-green-600">15</div>
-//           <div className="text-sm text-gray-500">You participated</div>
-//         </div>
-//         <div className="bg-white p-6 rounded-lg shadow-sm border">
-//           <h3 className="text-lg font-semibold text-gray-700 mb-2">Your Votes</h3>
-//           <div className="text-2xl font-bold text-purple-600">18</div>
-//           <div className="text-sm text-gray-500">Total votes cast</div>
-//         </div>
-//       </div>
-
-//       <div className="bg-white p-8 rounded-lg shadow-sm border">
-//         <div className="text-center">
-//           <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-//           <h3 className="text-lg font-semibold text-gray-700 mb-2">Community Polling</h3>
-//           <p className="text-gray-500 mb-6">Participate in polls and help shape community decisions.</p>
-//           <div className="flex gap-4 justify-center">
-//             <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-//               Browse Active Polls
-//             </button>
-//             <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
-//               View Results
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Polls;
-
-
-

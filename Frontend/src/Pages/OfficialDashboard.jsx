@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const OfficialDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeFilter, setActiveFilter] = useState('all');
   const [notifications, setNotifications] = useState({ petitions: 12, polls: 3 });
+  const [userInfo, setUserInfo] = useState(null);
+  const navigate = useNavigate();
+
+  // Load user information on component mount
+  useEffect(() => {
+    const storedUserInfo = localStorage.getItem('userInfo');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (storedUserInfo && userRole === 'Public Official') {
+      setUserInfo(JSON.parse(storedUserInfo));
+    } else {
+      // If user is not a public official or no user info, redirect to login
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Simulate real-time updates
   useEffect(() => {
@@ -27,9 +43,31 @@ const OfficialDashboard = () => {
     setActiveFilter(filter);
   };
 
+  const handleSignOut = () => {
+    // Clear user data and redirect to home
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('userRole');
+    navigate('/');
+  };
+
   const respondToPetition = (id) => {
     alert(`Opening response interface for petition ${id}...`);
   };
+
+  // If user info is not loaded yet, show loading
+  if (!userInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 to-green-50">
+        <div className="text-center">
+          <div className="text-3xl text-green-800 mb-4">🏛️</div>
+          <div className="text-xl font-bold text-green-800">Loading Official Dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Safe firstName calculation
+  const firstName = userInfo?.name ? userInfo.name.split(' ')[0] : 'Official';
 
   const petitions = [
     {
@@ -88,6 +126,59 @@ const OfficialDashboard = () => {
     return classes[priority] || '';
   };
 
+  const quickActions = [
+    { 
+      icon: '📢', 
+      title: 'Create Public Announcement', 
+      desc: 'Share important updates with citizens', 
+      action: () => alert('Opening announcement creation form...') 
+    },
+    { 
+      icon: '📋', 
+      title: 'Review Pending Petitions', 
+      desc: '12 petitions awaiting your response', 
+      action: () => alert('Navigating to petition review page...') 
+    },
+    { 
+      icon: '🗳️', 
+      title: 'Create Community Poll', 
+      desc: 'Gather public opinion on issues', 
+      action: () => alert('Opening poll creation interface...') 
+    },
+    { 
+      icon: '📊', 
+      title: 'View Engagement Analytics', 
+      desc: 'Track community participation trends', 
+      action: () => alert('Loading detailed analytics dashboard...') 
+    },
+    { 
+      icon: '📅', 
+      title: 'Schedule Town Hall', 
+      desc: 'Plan community meetings', 
+      action: () => alert('Opening meeting scheduler...') 
+    }
+  ];
+
+  const navigationItems = [
+    { id: 'dashboard', icon: '🏠', label: 'Dashboard', badge: null },
+    { id: 'petitions', icon: '📝', label: 'Petitions', badge: notifications.petitions },
+    { id: 'polls', icon: '📊', label: 'Polls', badge: notifications.polls },
+    { id: 'feedback', icon: '💬', label: 'Community Feedback', badge: null },
+    { id: 'analytics', icon: '📈', label: 'Analytics & Reports', badge: null },
+    { id: 'announcements', icon: '📢', label: 'Public Announcements', badge: null },
+    { id: 'engagement', icon: '👥', label: 'Citizen Engagement', badge: null },
+    { id: 'settings', icon: '⚙️', label: 'Settings', badge: null }
+  ];
+
+  const stats = [
+    { title: 'Pending Petitions', value: '12', change: '+3 from last week', icon: '📝', positive: true },
+    { title: 'Active Polls', value: '3', change: '847 total responses', icon: '📊', positive: true },
+    { title: 'Response Rate', value: '94%', change: '+5% this month', icon: '⚡', positive: true },
+    { title: 'Community Satisfaction', value: '4.7', change: '+0.3 from last quarter', icon: '👍', positive: true }
+  ];
+
+  const filters = ['all', 'high-priority', 'urgent', 'overdue'];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 flex">
       {/* Sidebar */}
@@ -108,25 +199,20 @@ const OfficialDashboard = () => {
           <div className="bg-green-800 text-white px-3 py-1 rounded-full text-xs font-bold mb-2 inline-block">
             VERIFIED OFFICIAL
           </div>
-          <div className="text-lg font-bold text-green-800 mb-1">Hon. Sarah Johnson</div>
-          <div className="text-green-700 text-sm mb-2">City Council Member, District 3</div>
+          <div className="text-lg font-bold text-green-800 mb-1">
+            {userInfo?.name || 'Official User'}
+          </div>
+          <div className="text-green-700 text-sm mb-2">
+            {userInfo?.email || 'No email available'}
+          </div>
           <div className="text-green-700 text-xs flex items-center">
-            📍 San Diego, CA
+            📍 Connected via CIVIX Platform
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1">
-          {[
-            { id: 'dashboard', icon: '🏠', label: 'Dashboard', badge: null },
-            { id: 'petitions', icon: '📝', label: 'Petitions', badge: notifications.petitions },
-            { id: 'polls', icon: '📊', label: 'Polls', badge: notifications.polls },
-            { id: 'feedback', icon: '💬', label: 'Community Feedback', badge: null },
-            { id: 'analytics', icon: '📈', label: 'Analytics & Reports', badge: null },
-            { id: 'announcements', icon: '📢', label: 'Public Announcements', badge: null },
-            { id: 'engagement', icon: '👥', label: 'Citizen Engagement', badge: null },
-            { id: 'settings', icon: '⚙️', label: 'Settings', badge: null }
-          ].map(item => (
+          {navigationItems.map((item) => (
             <div
               key={item.id}
               className={`flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40 hover:translate-x-1 ${
@@ -151,7 +237,10 @@ const OfficialDashboard = () => {
             <span className="mr-3 text-lg">❓</span>
             Help & Support
           </div>
-          <div className="flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40">
+          <div 
+            className="flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40"
+            onClick={handleSignOut}
+          >
             <span className="mr-3 text-lg">🚪</span>
             Sign Out
           </div>
@@ -160,11 +249,15 @@ const OfficialDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
-        {/* Header */}
+        {/* Header with Welcome Message */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-green-800">
-            <h1 className="text-3xl font-bold mb-2">Official Dashboard</h1>
-            <p className="text-gray-600 text-lg">Manage community engagement and respond to citizen concerns</p>
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, {firstName}!
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Manage community engagement and respond to citizen concerns
+            </p>
           </div>
           <div className="flex gap-4">
             <button className="px-6 py-3 bg-green-100 text-green-800 border border-green-800 rounded-lg font-semibold hover:bg-green-800 hover:text-white transition-all duration-300 flex items-center gap-2">
@@ -178,12 +271,7 @@ const OfficialDashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[
-            { title: 'Pending Petitions', value: '12', change: '+3 from last week', icon: '📝', positive: true },
-            { title: 'Active Polls', value: '3', change: '847 total responses', icon: '📊', positive: true },
-            { title: 'Response Rate', value: '94%', change: '+5% this month', icon: '⚡', positive: true },
-            { title: 'Community Satisfaction', value: '4.7', change: '+0.3 from last quarter', icon: '👍', positive: true }
-          ].map((stat, index) => (
+          {stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:-translate-y-2 hover:shadow-xl transition-all duration-300 border-l-4 border-green-400">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-600 text-sm font-medium">{stat.title}</span>
@@ -204,7 +292,7 @@ const OfficialDashboard = () => {
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-green-800">Petitions Requiring Action</h2>
               <div className="flex gap-2 flex-wrap">
-                {['all', 'high-priority', 'urgent', 'overdue'].map(filter => (
+                {filters.map((filter) => (
                   <button
                     key={filter}
                     className={`px-4 py-2 rounded-full text-xs transition-all duration-300 ${
@@ -221,7 +309,7 @@ const OfficialDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {petitions.map(petition => {
+              {petitions.map((petition) => {
                 const statusConfig = getStatusConfig(petition.status);
                 return (
                   <div key={petition.id} className={`flex justify-between items-start p-4 border-b border-gray-100 last:border-b-0 ${getPriorityClass(petition.priority)}`}>
@@ -258,13 +346,7 @@ const OfficialDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {[
-                { icon: '📢', title: 'Create Public Announcement', desc: 'Share important updates with citizens', action: () => alert('Opening announcement creation form...') },
-                { icon: '📋', title: 'Review Pending Petitions', desc: '12 petitions awaiting your response', action: () => alert('Navigating to petition review page...') },
-                { icon: '🗳️', title: 'Create Community Poll', desc: 'Gather public opinion on issues', action: () => alert('Opening poll creation interface...') },
-                { icon: '📊', title: 'View Engagement Analytics', desc: 'Track community participation trends', action: () => alert('Loading detailed analytics dashboard...') },
-                { icon: '📅', title: 'Schedule Town Hall', desc: 'Plan community meetings', action: () => alert('Opening meeting scheduler...') }
-              ].map((action, index) => (
+              {quickActions.map((action, index) => (
                 <div
                   key={index}
                   className="flex items-center p-4 bg-green-50 rounded-lg cursor-pointer transition-all duration-300 border border-transparent hover:bg-green-100 hover:border-green-400 hover:translate-x-1"

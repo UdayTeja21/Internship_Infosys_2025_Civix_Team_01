@@ -1,19 +1,7 @@
 import { AlertCircle, Clock, FileText, Filter, MapPin, Search, Users, X } from 'lucide-react';
 import React, { useState } from 'react';
 
-interface Petition {
-  id: number;
-  title: string;
-  category: string;
-  location: string;
-  description: string;
-  signatures: number;
-  dateCreated: string;
-  status: 'active' | 'closed';
-  isMyPetition: boolean;
-}
-
-const Petitions: React.FC = () => {
+const Petitions = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showBrowseView, setShowBrowseView] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -21,7 +9,7 @@ const Petitions: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
   
-  const [petitions, setPetitions] = useState<Petition[]>([
+  const [petitions, setPetitions] = useState([
     {
       id: 1,
       title: "Improve Public Transportation in Downtown",
@@ -64,7 +52,7 @@ const Petitions: React.FC = () => {
     description: ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -73,7 +61,7 @@ const Petitions: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    const newPetition: Petition = {
+    const newPetition = {
       id: Date.now(),
       title: formData.title,
       category: formData.category,
@@ -104,7 +92,7 @@ const Petitions: React.FC = () => {
     setSelectedLocation('all');
   };
 
-  const handleSignPetition = (petitionId: number) => {
+  const handleSignPetition = (petitionId) => {
     setPetitions(prev => prev.map(p => 
       p.id === petitionId ? { ...p, signatures: p.signatures + 1 } : p
     ));
