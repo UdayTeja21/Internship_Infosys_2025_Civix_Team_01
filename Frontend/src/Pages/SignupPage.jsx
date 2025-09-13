@@ -5,33 +5,42 @@ const SignupPage = () => {
   const [role, setRole] = useState("Citizen");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Create user info object from form data
-    const userInfo = {
-      name: fullName || "New User",
-      email: email || "user@example.com",
-    };
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
 
-    // Save role and userInfo in localStorage
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("userInfo", JSON.stringify(userInfo));
+    try {
+      const res = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password, role }),
+      });
 
-    // Navigate based on role
-    if (role === "Public Official") {
-      navigate("/official-dashboard");
-    } else {
-      navigate("/dashboard");
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Signup successful! Please login.");
+        navigate("/login");
+      } else {
+        alert(data.message || "Signup failed");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      alert("Something went wrong!");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-5xl bg-white rounded-xl shadow-md flex overflow-hidden">
-        
         {/* Left Section */}
         <div className="w-1/2 bg-green-200 p-10 flex flex-col justify-center">
           <h1 className="text-2xl font-bold flex items-center gap-2 text-gray-800 mb-4">
@@ -41,8 +50,8 @@ const SignupPage = () => {
             Digital Civic Engagement platform
           </h2>
           <p className="text-gray-700 mb-6">
-            Civix enables citizens to engage in local governance through
-            petitions, voting and tracking officials responses.
+            Civix enables citizens to engage in local governance through petitions,
+            voting and tracking officials responses.
           </p>
           <ul className="space-y-4 text-gray-800">
             <li className="flex items-center gap-2">
@@ -85,6 +94,7 @@ const SignupPage = () => {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 focus:ring-2 focus:ring-green-400 outline-none"
+              required
             />
             <input
               type="email"
@@ -92,16 +102,23 @@ const SignupPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 focus:ring-2 focus:ring-green-400 outline-none"
+              required
             />
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 focus:ring-2 focus:ring-green-400 outline-none"
+              required
             />
             <input
               type="password"
               placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 focus:ring-2 focus:ring-green-400 outline-none"
+              required
             />
 
             <div>
