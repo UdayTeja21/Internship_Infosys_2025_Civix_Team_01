@@ -27,7 +27,14 @@ const OfficialDashboard = () => {
     estimatedCompletion: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  // ----- Poll states -----
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [pollForm, setPollForm] = useState({ question: '', options: ['', ''] });
+  const [isPollSubmitting, setIsPollSubmitting] = useState(false);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [selectedPollResults, setSelectedPollResults] = useState(null);
+
   const navigate = useNavigate();
 
   // Load user info
@@ -174,7 +181,7 @@ const OfficialDashboard = () => {
         fetchPetitions();
         fetchStats();
       } else {
-        alert('Failed to submit response: ' + data.error);
+        alert('Failed to submit response: ' + (data.error || JSON.stringify(data)));
       }
     } catch (error) {
       console.error('Error submitting response:', error);
@@ -201,6 +208,85 @@ const OfficialDashboard = () => {
       'low': 'border-l-4 border-green-500',
     };
     return classes[priority] || '';
+  };
+
+  // ----- Poll helpers -----
+  const handlePollOptionChange = (idx, value) => {
+    const updated = [...pollForm.options];
+    updated[idx] = value;
+    setPollForm({ ...pollForm, options: updated });
+  };
+
+  const addPollOption = () => {
+    setPollForm({ ...pollForm, options: [...pollForm.options, ''] });
+  };
+
+  const submitPoll = async () => {
+    if (!pollForm.question.trim() || pollForm.options.some(opt => !opt.trim())) {
+      alert('Please enter a question and fill all options');
+      return;
+    }
+
+    setIsPollSubmitting(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/polls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pollForm),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Poll created successfully');
+        setShowPollModal(false);
+        setPollForm({ question: '', options: ['', ''] });
+        fetchPolls();
+        fetchStats();
+      } else {
+        alert(data.error || 'Failed to create poll');
+      }
+    } catch (err) {
+      console.error('Error creating poll:', err);
+      alert('Error creating poll');
+    } finally {
+      setIsPollSubmitting(false);
+    }
+  };
+
+  const viewResults = async (pollId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/polls/${pollId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedPollResults(data);
+        setShowResultsModal(true);
+      } else {
+        alert(data.error || 'Failed to fetch poll results');
+      }
+    } catch (err) {
+      console.error('Error fetching poll results:', err);
+      alert('Error fetching poll results');
+    }
+  };
+
+  const closePoll = async (pollId) => {
+    const ok = window.confirm('Close this poll? This will remove it from Active Polls.');
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/polls/${pollId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Poll closed');
+        fetchPolls();
+        fetchStats();
+      } else {
+        alert(data.error || 'Failed to close poll');
+      }
+    } catch (err) {
+      console.error('Error closing poll:', err);
+      alert('Error closing poll');
+    }
   };
 
   // Render different content based on active tab
@@ -298,7 +384,7 @@ const OfficialDashboard = () => {
                 .map((petition) => {
                   const statusConfig = getStatusConfig(petition.status);
                   return (
-                    <div key={petition._id} className={`flex justify-between items-start p-4 border border-gray-200 rounded-lg ${getPriorityClass(petition.priority)}`}>
+                    <div key={petition._1d} className={`flex justify-between items-start p-4 border border-gray-200 rounded-lg ${getPriorityClass(petition.priority)}`}>
                       <div className="flex-1">
                         <div className="font-semibold text-green-800 mb-1">{petition.title}</div>
                         <div className="text-sm text-gray-600 mb-2">
@@ -344,22 +430,33 @@ const OfficialDashboard = () => {
           <div className="bg-white rounded-2xl p-6 shadow-lg">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-green-800">Polls Management</h2>
-              <button className="bg-green-800 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+              <button
+                className="bg-green-800 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                onClick={() => setShowPollModal(true)}
+              >
                 Create New Poll
               </button>
             </div>
             <div className="space-y-4">
               {polls.length > 0 ? polls.map((poll) => (
                 <div key={poll._id} className="p-4 border border-gray-200 rounded-lg">
-                  <div className="font-semibold text-green-800 mb-2">{poll.title}</div>
-                  <div className="text-sm text-gray-600 mb-2">{poll.description}</div>
+                  <div className="font-semibold text-green-800 mb-2">{poll.question || poll.title}</div>
+                  {poll.description && <div className="text-sm text-gray-600 mb-2">{poll.description}</div>}
+                  <div className="space-y-1 mb-2">
+                    {Array.isArray(poll.options) && poll.options.map((opt, idx) => (
+                      <div key={idx} className="flex justify-between text-sm text-gray-600">
+                        <span>{opt.text}</span>
+                        <span>{opt.votes ?? 0} votes</span>
+                      </div>
+                    ))}
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      Created: {new Date(poll.createdAt).toLocaleDateString()}
+                      Created: {poll.createdAt ? new Date(poll.createdAt).toLocaleDateString() : '—'}
                     </span>
                     <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-blue-500 text-white rounded text-sm">View Results</button>
-                      <button className="px-3 py-1 bg-red-500 text-white rounded text-sm">Close Poll</button>
+                      <button onClick={() => viewResults(poll._id)} className="px-3 py-1 bg-blue-500 text-white rounded text-sm">View Results</button>
+                      <button onClick={() => closePoll(poll._id)} className="px-3 py-1 bg-red-500 text-white rounded text-sm">Close Poll</button>
                     </div>
                   </div>
                 </div>
@@ -660,6 +757,84 @@ const OfficialDashboard = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Poll Modal */}
+      {showPollModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-green-800">Create New Poll</h3>
+              <button onClick={() => setShowPollModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Poll question"
+                value={pollForm.question}
+                onChange={(e) => setPollForm({ ...pollForm, question: e.target.value })}
+                className="w-full p-3 border border-gray-300 rounded-lg"
+              />
+
+              {pollForm.options.map((opt, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  placeholder={`Option ${idx + 1}`}
+                  value={opt}
+                  onChange={(e) => handlePollOptionChange(idx, e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg"
+                />
+              ))}
+
+              <button type="button" onClick={addPollOption} className="text-green-700 text-sm">+ Add Option</button>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={submitPoll}
+                  disabled={isPollSubmitting}
+                  className="flex-1 bg-green-800 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-400"
+                >
+                  {isPollSubmitting ? 'Creating...' : 'Create Poll'}
+                </button>
+                <button onClick={() => setShowPollModal(false)} className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Poll Results Modal */}
+      {showResultsModal && selectedPollResults && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-green-800">Poll Results</h3>
+              <button onClick={() => { setShowResultsModal(false); setSelectedPollResults(null); }} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+
+            <div className="mb-4">
+              <div className="font-semibold text-green-800 mb-2">{selectedPollResults.question || selectedPollResults.title}</div>
+              <div className="text-sm text-gray-500 mb-3">Created: {selectedPollResults.createdAt ? new Date(selectedPollResults.createdAt).toLocaleDateString() : '—'}</div>
+
+              <div className="space-y-2">
+                {Array.isArray(selectedPollResults.options) && selectedPollResults.options.map((opt, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <div className="text-sm text-gray-700">{opt.text}</div>
+                    <div className="text-sm font-bold text-green-800">{opt.votes ?? 0} votes</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={() => { setShowResultsModal(false); setSelectedPollResults(null); }} className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Close</button>
             </div>
           </div>
         </div>
