@@ -1,93 +1,4 @@
 import axios from "axios";
-
-// class ApiClient {
-//   constructor() {
-//     this.client = axios.create({
-//       baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-//       timeout: 10000,
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-
-//     this.initializeInterceptors();
-//   }
-
-//   initializeInterceptors() {
-//     // ✅ Always check token from localStorage before each request
-//     this.client.interceptors.request.use(
-//       (config) => {
-//         const token = localStorage.getItem("token");
-//         if (token) {
-//           config.headers.Authorization = `Bearer ${token}`;
-//         }
-//         console.log("📤 API Request:", {
-//           url: config.url,
-//           method: config.method,
-//           data: config.data,
-//         });
-//         return config;
-//       },
-//       (error) => {
-//         console.error("❌ Request error:", error);
-//         return Promise.reject(error);
-//       }
-//     );
-
-//     // ✅ Response interceptor with global error handling
-//     this.client.interceptors.response.use(
-//       (response) => {
-//         console.log("✅ API Response:", {
-//           status: response.status,
-//           data: response.data,
-//           url: response.config.url,
-//         });
-//         return response;
-//       },
-//       (error) => {
-//         if (error.response) {
-//           console.error("❌ Server responded with error:", {
-//             status: error.response.status,
-//             data: error.response.data,
-//             url: error.response.config.url,
-//           });
-//         } else if (error.request) {
-//           console.error("❌ No response received:", error.request);
-//           console.error("⚠️ Check if backend server is running on port 5000");
-//         } else {
-//           console.error("❌ Request setup error:", error.message);
-//         }
-
-//         // Auto-logout on 401 Unauthorized
-//         if (error.response?.status === 401) {
-//           this.clearAuth();
-//           window.location.href = "/login";
-//         }
-
-//         return Promise.reject(error);
-//       }
-//     );
-//   }
-
-//   clearAuth() {
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("userId");
-//     delete this.client.defaults.headers.common["Authorization"];
-//   }
-
-//   // ================= Auth methods =================
-//   async login(credentials) {
-//     const response = await this.client.post("/auth/login", credentials);
-//     if (response.data?.token) {
-//       this.setAuthToken(response.data.token);
-//       localStorage.setItem("user", JSON.stringify(response.data.user));
-//       localStorage.setItem("userId", response.data.user.id);
-//     }
-//     return response;
-//   }
-
-
 class ApiClient {
   constructor() {
     this.client = axios.create({
@@ -243,3 +154,4 @@ class ApiClient {
 
 export const API = new ApiClient();
 export default API;
+

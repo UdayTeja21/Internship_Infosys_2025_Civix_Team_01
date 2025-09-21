@@ -13,162 +13,66 @@ const SignupPage = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  // Frontend validation
-  if (!fullName || !email || !password || !confirmPassword) {
-    setError("All fields are required");
-    setLoading(false);
-    return;
-  }
+    // Frontend validation
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError("All fields are required");
+      setLoading(false);
+      return;
+    }
 
-  if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    setLoading(false);
-    return;
-  }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
-  if (password.length < 6) {
-    setError("Password must be at least 6 characters");
-    setLoading(false);
-    return;
-  }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
+    }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    setError("Please enter a valid email address");
-    setLoading(false);
-    return;
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
 
-  try {
-    // Call backend API
-    const response = await API.register({
-      fullName: fullName.trim(),
-      email: email.toLowerCase().trim(),
-      password,
-      role: role.toLowerCase(),
-    });
+    try {
+      // Call backend API
+      const response = await API.register({
+        fullName: fullName.trim(),
+        email: email.toLowerCase().trim(),
+        password,
+        role: role.toLowerCase(),
+      });
 
-    console.log("Registration response:", response.data);
+      console.log("Registration response:", response.data);
 
-    if (response.data && response.data.token) {
-      // Store token + user
-      API.setAuthToken(response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      localStorage.setItem("userInfo", JSON.stringify({
-        name: fullName,
-        email: email,
-      }));
-
-      // Redirect based on role
-      if (role.toLowerCase() === "official") {
-        navigate("/official-dashboard");
-      } else {
-        navigate("/dashboard");
+      // On successful registration, redirect to the login page.
+      if (response.data) {
+        // You could optionally pass a success message to the login page
+        // navigate("/login", { state: { message: "Registration successful! Please log in." } });
+        navigate("/login");
       }
+    } catch (err) {
+      console.error("Registration error:", err);
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Registration error:", err);
-    if (err.response?.data?.error) {
-      setError(err.response.data.error);
-    } else if (err.response?.data?.message) {
-      setError(err.response.data.message);
-    } else {
-      setError("Registration failed. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setError("");
-  //   setLoading(true);
-
-  //   // Frontend validation
-  //   if (!fullName || !email || !password || !confirmPassword) {
-  //     setError("All fields are required");
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   if (password !== confirmPassword) {
-  //     setError("Passwords do not match");
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   if (password.length < 6) {
-  //     setError("Password must be at least 6 characters");
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //   if (!emailRegex.test(email)) {
-  //     setError("Please enter a valid email address");
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     // Call the backend API with proper data structure
-  //     const response = await API.register({
-  //       fullName: fullName.trim(),
-  //       email: email.toLowerCase().trim(),
-  //       password: password,
-  //       role: role.toLowerCase()
-  //     });
-
-  //     console.log("Registration response:", response.data);
-
-  //     if (response.data && response.data.token) {
-  //       // Store token and user data
-  //       API.setAuthToken(response.data.token);
-  //       localStorage.setItem("user", JSON.stringify(response.data.user));
-  //       localStorage.setItem("userInfo", JSON.stringify({
-  //         name: fullName,
-  //         email: email
-  //       }));
-
-  //       // Navigate based on role
-  //       if (role.toLowerCase() === "official") {
-  //         navigate("/official-dashboard");
-  //       } else {
-  //         navigate("/dashboard");
-  //       }
-  //     }
-  //   } catch (err) {
-  //     console.error("Registration error:", err);
-      
-  //     // Detailed error handling
-  //     if (err.response?.data?.error) {
-  //       setError(err.response.data.error);
-  //     } else if (err.response?.data?.message) {
-  //       setError(err.response.data.message);
-  //     } else if (err.response?.data) {
-  //       // Handle validation errors from backend
-  //       const errors = err.response.data;
-  //       if (typeof errors === 'object') {
-  //         const errorMessages = Object.values(errors).flat().join(', ');
-  //         setError(errorMessages);
-  //       } else {
-  //         setError("Registration failed: " + JSON.stringify(errors));
-  //       }
-  //     } else if (err.message) {
-  //       setError(err.message);
-  //     } else {
-  //       setError("Registration failed. Please try again.");
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -311,3 +215,4 @@ const SignupPage = () => {
 };
 
 export default SignupPage;
+
