@@ -9,6 +9,7 @@ const router = express.Router();
 // Get dashboard stats
 router.get('/stats', async (req, res) => {
   try {
+    console.log('User object on request:', req.user);
     const userId = req.user._id;
     const [myPetitions, signedPetitions, activePetitions] = await Promise.all([
       Petition.countDocuments({ creator: userId }),

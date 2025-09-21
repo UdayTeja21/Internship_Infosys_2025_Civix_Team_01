@@ -1,19 +1,3 @@
-// const TrackResponses = () => {
-//   return (
-//     <div className="flex-1 p-6">
-//       <div className="mb-6">
-//         <h1 className="text-2xl font-bold text-gray-800 mb-2">TrackResponses</h1>
-//         <p className="text-gray-600">
-//           This is Tracking responses page
-//         </p>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default TrackResponses;
-
-
 import { CheckCircle, FileText, Hourglass } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
