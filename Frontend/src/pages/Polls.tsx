@@ -632,7 +632,7 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
                     <div className="flex gap-2">
     {poll.isMyPoll && (
       <div className="flex gap-2 items-center">
-        <span className="bg-blue-100 text-blue-800 text-l px-8 py-4 rounded-full">
+        <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-bold shadow-md border-2 border-blue-400 flex items-center justify-center">
           Your Poll
         </span>
        
@@ -653,7 +653,7 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
 
       </div>
     )}
-                      <span className="bg-gray-100 text-gray-600 text-base px-4 py-2 rounded-full">
+                      <span className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full font-bold shadow-md border-2 border-gray-400 flex items-center justify-center">
                         {poll.location}
                       </span>
                     </div>
