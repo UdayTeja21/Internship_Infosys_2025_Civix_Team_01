@@ -25,6 +25,9 @@ router.post("/", async (req, res) => {
       createdBy,
       targetLocation,
       closeDate,
+      /* new buddy 6 */
+      isOfficial: req.body.isOfficial === true,
+      /* new buddy 6 */
     });
 
     await poll.save();
@@ -46,6 +49,7 @@ const handleSubmit = async (e) => {
     targetLocation: "Jamshedpur",   // later dynamic
     createdBy: "64fb1234abcd56789ef00123", // userId from login
     closeDate,
+    
   };
 
   try {

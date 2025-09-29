@@ -15,6 +15,7 @@ const PollSchema = new mongoose.Schema({
   closeDate: { type: Date },
   status: { type: String, enum: ["active", "closed"], default: "active" },
   createdAt: { type: Date, default: Date.now },
+  isOfficial: { type: Boolean, default: false }
 });
 
 const Poll = mongoose.model("Poll", PollSchema);

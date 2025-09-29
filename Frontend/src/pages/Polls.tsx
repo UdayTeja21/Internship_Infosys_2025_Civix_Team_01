@@ -13,6 +13,9 @@ interface Poll {
   hasVoted: boolean;
   location: string;
   isMyPoll: boolean;
+  /* new buddy 11 */
+  isOfficial: boolean;
+  /* new buddy 11 */
 }
 interface ToastModalProps {
   message: string;
@@ -86,7 +89,10 @@ const Polls: React.FC = () => {
         totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
         hasVoted: false,
         location: poll.targetLocation || '',
-        isMyPoll: poll.createdBy === currentUserId
+        isMyPoll: poll.createdBy === currentUserId,
+        /* new buddy 9 */
+        isOfficial: poll.isOfficial
+        /* new buddy 9 */
       }));
 
       // Fetch voted poll IDs for this user
@@ -139,7 +145,10 @@ const Polls: React.FC = () => {
     totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
     hasVoted: false,
     location: poll.targetLocation || 'San Diego, CA',
-    isMyPoll: poll.createdBy === currentUserId
+    isMyPoll: poll.createdBy === currentUserId,
+    /* new buddy 8 */
+    isOfficial: poll.isOfficial
+    /* new buddy 8 */
   }));
   if (currentUserId) {
     const votedRes = await axios.get(`http://localhost:5000/api/polls/voted?userId=${currentUserId}`);
@@ -176,6 +185,7 @@ const Polls: React.FC = () => {
       targetLocation: pollLocation.trim(), // or make dynamic
       createdBy: userId, // replace with real user id if available
       closeDate: closesOn,
+      isOfficial: false
     };
 
     try {
@@ -193,7 +203,10 @@ const Polls: React.FC = () => {
           totalVotes: res.data.options.reduce((sum: number, o: any) => sum + o.votes, 0),
           hasVoted: false,
           location: res.data.targetLocation || 'San Diego, CA',
-          isMyPoll: true
+          isMyPoll: true,
+          /* new buddy 11 */
+          isOfficial: res.data.isOfficial || false
+          /* new buddy 11 */
         },
         ...polls
       ]);
@@ -630,6 +643,11 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-lg font-semibold text-gray-800">{poll.question}</h3>
                     <div className="flex gap-2">
+                      {poll.isOfficial && (
+      <span className="bg-yellow-300 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+        <span>★</span> Official Poll
+      </span>
+    )}
     {poll.isMyPoll && (
       <div className="flex gap-2 items-center">
         <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-bold shadow-md border-2 border-blue-400 flex items-center justify-center">
