@@ -4,6 +4,9 @@ Backend :cd Backend
 1. npm i
 2. create env and database
 3. run node Server.js
-Frontend:cd Frontend
+ 
+ 
+ 
+ Frontend:cd Frontend
 1.npm i
 2.npm run dev
