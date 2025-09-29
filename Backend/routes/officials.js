@@ -8,36 +8,36 @@ const router = express.Router();
 
 // Endpoint to calculate statistics for the officials page
 router.get('/stats', async (req, res) => {
-  try {
-    const userId = req.user._id; // Get user ID from auth middleware
+  try {
+    const userId = req.user._id; // Get user ID from auth middleware
 
-    // Run all database queries at the same time for performance
-    const [
-      officialCount,
-      messagesSentCount,
-      responsesReceivedCount
-    ] = await Promise.all([
-      // Counts all users with the 'official' role
-      User.countDocuments({ role: 'official' }),
+    // Run all database queries at the same time for performance
+    const [
+      officialCount,
+      messagesSentCount,
+      responsesReceivedCount
+    ] = await Promise.all([
+      // Counts all users with the 'official' role
+      User.countDocuments({ role: 'official' }),
 
-      // Counts petitions created by the current user
-      Petition.countDocuments({ creator: userId }),
+      // Counts petitions created by the current user
+      Petition.countDocuments({ creator: userId }),
 
-      // Counts petitions by the current user with a 'responded' status
-      Petition.countDocuments({ creator: userId, status: 'responded' })
-    ]);
+      // Counts petitions by the current user with a 'responded' status
+      Petition.countDocuments({ creator: userId, status: 'responded' })
+    ]);
 
-    // Send all the dynamic counts in the JSON response
-    res.json({
-      totalOfficials: officialCount,
-      messagesSent: messagesSentCount,
-      responsesReceived: responsesReceivedCount,
-    });
+    // Send all the dynamic counts in the JSON response
+    res.json({
+      totalOfficials: officialCount,
+      messagesSent: messagesSentCount,
+      responsesReceived: responsesReceivedCount,
+    });
 
-  } catch (err) {
-    console.error('Error fetching official stats:', err);
-    res.status(500).json({ error: 'Server error while fetching stats' });
-  }
+  } catch (err) {
+    console.error('Error fetching official stats:', err);
+    res.status(500).json({ error: 'Server error while fetching stats' });
+  }
 });
 
 

@@ -17,7 +17,6 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState('');
 
-  // ADDITION 1: Copied the function to get User ID from your Petitions.jsx
   const getUserIdFromStorage = () => {
     const userString = localStorage.getItem('user');
     if (userString) {
@@ -47,18 +46,14 @@ const Dashboard = () => {
     const fetchAndProcessData = async () => {
       setIsLoading(true);
       try {
-        // ADDITION 2: Get the user's ID before making the API call
         const userId = getUserIdFromStorage();
-
-        // ADDITION 3: Send the userId in the API call, just like Petitions.jsx does
         const response = await API.getPetitions({ limit: 1000, userId });
         const fetchedPetitions = response.data.petitions || [];
-
-        // Now this line will work correctly because the server has added the `isMyPetition` flag
         const myPetitionsCount = fetchedPetitions.filter(p => p.isMyPetition).length;
 
+        // ✅ FIXED LOGIC HERE: Changed the status check to 'approved'
         const successfulPetitionsCount = fetchedPetitions.filter(p =>
-          p.isMyPetition && (p.status === 'successful' || p.status === 'under-review')
+          p.isMyPetition && p.status === 'approved'
         ).length;
 
         setStats({ myPetitions: myPetitionsCount, successfulPetitions: successfulPetitionsCount });
@@ -94,7 +89,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 p-6">
-      {/* Header and Other JSX */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard</h1>
         <p className="text-gray-600">Welcome back{username ? `, ${username}` : ''}!</p>

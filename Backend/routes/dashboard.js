@@ -222,6 +222,33 @@ router.get('/notifications', async (req, res) => {
     }
 });
 
+// GET /api/dashboard/stats - Fetches stats for the logged-in citizen
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Count petitions created by the user
+    const myPetitionsCount = await Petition.countDocuments({ creator: userId });
+
+    // Count petitions signed by the user
+    const signedPetitionsCount = await Petition.countDocuments({ 'signatures.signedBy': userId });
+
+    // Count all active petitions (example of a general stat)
+    const activePetitionsCount = await Petition.countDocuments({ status: 'active' });
+
+    res.json({
+      myPetitions: myPetitionsCount,
+      signedPetitions: signedPetitionsCount,
+      activePetitions: activePetitionsCount,
+    });
+
+  } catch (err) {
+    console.error("Error fetching dashboard stats:", err);
+    res.status(500).json({ error: 'Server error while fetching dashboard stats' });
+  }
+});
+
+
 // ✅ ADDED: THE MISSING REPORTS ENDPOINT
 router.get('/reports', async (req, res) => {
   try {
