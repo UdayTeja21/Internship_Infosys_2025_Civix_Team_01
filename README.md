@@ -1,13 +1,12 @@
 # Internship_Infosys_2025_Civix_Teamo_01
 Steps to run :
-Backend :cd Backend
-1. npm i
-2. create env and database
-3. run node Server.js
- 
- 
- 
-Frontend:cd Frontend
+Backend :
+1.cd Backend
+2. npm i
+3. create env and database
+4. run node Server.js
+Frontend:
+1.cd Frontend
+2.npm i
+3.npm run dev
 
-1.npm i
-2.npm run dev
