@@ -10,8 +10,10 @@ import authMiddleware from "./middleware/authMiddleware.js";
 import User from "./models/User.js";
 import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import officialsRoutes from "./routes/officials.js";
 import petitionRoutes from "./routes/petitions.js";
 import pollRoutes from "./routes/Polls.js";
+import reportRoutes from './routes/reports.js';
 import settingsRoutes from "./routes/settings.js";
 dotenv.config();
 const app = express();
@@ -33,6 +35,8 @@ app.use("/api/petitions", petitionRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use('/api/dashboard', authMiddleware, dashboardRoutes); // Protected dashboard routes
+app.use('/api/officials', authMiddleware, officialsRoutes);
+app.use('/api', reportRoutes); 
 
 // =================================================================
 // DELETED: The duplicate 'authMiddleware' function was removed from here.

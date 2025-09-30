@@ -10,6 +10,50 @@ dotenv.config();
 // ======================
 // Signup & Login (No Changes)
 // ======================
+// export const signup = async (req, res) => {
+//   try {
+//     const { fullName, email, password, role } = req.body;
+//     let user = await User.findOne({ email });
+//     if (user) {
+//       return res.status(400).json({ error: "User already exists with this email" });
+//     }
+//     user = new User({
+//       fullName,
+//       email,
+//       password,
+//       role: (role || "citizen").toLowerCase()
+//     });
+//     await user.save();
+//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+//     res.status(201).json({ token, user });
+//   } catch (err) {
+//     console.error("Signup Error:", err);
+//     res.status(500).json({ error: "Server error during registration" });
+//   }
+// };
+
+// export const login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+//     const user = await User.findOne({ email }).select('+password');
+//     if (!user) {
+//       return res.status(400).json({ error: "Invalid credentials" });
+//     }
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) {
+//       return res.status(400).json({ error: "Invalid credentials" });
+//     }
+//     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+//     res.json({ token, user });
+//   } catch (err) {
+//     console.error("Login Error:", err);
+//     res.status(500).json({ error: "Server error" });
+//   }
+// };
+
+
+//new logic 
+
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password, role } = req.body;
@@ -25,7 +69,15 @@ export const signup = async (req, res) => {
     });
     await user.save();
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.status(201).json({ token, user });
+    res.status(201).json({ 
+      token,
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      }
+    });
   } catch (err) {
     console.error("Signup Error:", err);
     res.status(500).json({ error: "Server error during registration" });
@@ -44,13 +96,20 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token, user });
+    res.json({ 
+      token, 
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      } 
+    });
   } catch (err) {
     console.error("Login Error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
-
 // ======================
 // Password Reset Logic
 // ======================
@@ -147,3 +206,8 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+
+
+
+
