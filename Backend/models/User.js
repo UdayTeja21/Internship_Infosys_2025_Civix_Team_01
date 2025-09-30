@@ -49,9 +49,9 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// This hook automatically converts the role to lowercase before saving
+// ✅ FIXED: Always convert role to lowercase
 userSchema.pre("save", function (next) {
-  if (this.isModified("role") || this.isNew) {
+  if (this.role) {
     this.role = this.role.toLowerCase();
   }
   next();

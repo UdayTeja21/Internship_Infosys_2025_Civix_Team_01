@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 import { useState, useEffect } from "react";
 
 const SettingsPage = () => {
@@ -19,6 +14,22 @@ const SettingsPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Auto clear successMessage after 3 seconds
+useEffect(() => {
+  if (successMessage) {
+    const timer = setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }
+}, [successMessage]);
+
+
+  
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -26,7 +37,7 @@ const SettingsPage = () => {
     email: "",
   });
 
-  // Notifications state
+  // Notifications state (unused for now)
   const [petitionEmails, setPetitionEmails] = useState(true);
 
   // Fetch user profile
@@ -49,6 +60,7 @@ const SettingsPage = () => {
             email: data.email,
           });
 
+          // ✅ Store backend profilePic (string or null)
           setProfilePic(data.profilePic || null);
         } else {
           console.error(data.error || "Failed to fetch user data");
@@ -75,21 +87,126 @@ const SettingsPage = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePic(reader.result);
+        setProfilePic(reader.result); // ✅ preview as base64
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Open camera on mobile
-  const handleTakePhoto = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment";
-    input.onchange = handleImageUpload;
-    input.click();
+  // Update profile
+  const handleProfileUpdate = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/settings/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          profilePic: profilePic, // ✅ backend must handle base64 or null
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+  setErrorMessage(data.error || data.message || "Failed to update profile");
+  setSuccessMessage("");
+  return;
+}
+
+setSuccessMessage(data.message || "Profile updated successfully");
+setErrorMessage("");
+
+
+      // ✅ refresh local profilePic with saved value from backend
+      setProfilePic(data.user?.profilePic || profilePic);
+
+    } catch (err) {
+      console.error("❌ Error:", err);
+      alert("Something went wrong. Try again.");
+    }
   };
+
+  // Update password
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        "http://localhost:5000/api/settings/update-password",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword,
+            newPassword,
+            confirmPassword,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+  setSuccessMessage("Password updated successfully!");
+  setErrorMessage("");
+  setCurrentPassword("");
+  setNewPassword("");
+  setConfirmPassword("");
+} else {
+  setErrorMessage(data.error || "Failed to update password");
+  setSuccessMessage("");
+}
+
+    } catch (err) {
+      console.error("❌ Error updating password:", err);
+      alert("⚠️ Server error while updating password");
+    }
+  };
+
+  // Remove profile picture
+  const handleRemoveProfilePic = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/settings/remove-profile-pic",
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+  
+    const data = await response.json();
+
+    if (!response.ok) {
+      setErrorMessage(data.error || "Failed to remove profile picture");
+      setSuccessMessage("");
+      return;
+    }
+
+    // ✅ Success case
+    setProfilePic(null);
+    setSuccessMessage("Profile picture removed successfully");
+    setErrorMessage("");
+
+    // ✅ Auto-hide popup after 3s
+    setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
+
+  } catch (err) {
+    console.error("❌ Error:", err);
+    alert("Something went wrong. Try again.");
+  }
+};
 
   // Sidebar items
   const sidebarItems = [
@@ -105,130 +222,27 @@ const SettingsPage = () => {
       title: "Security & Privacy",
       subtitle: "Change password and privacy settings",
     },
-    {
-      id: "notifications",
-      icon: "🔔",
-      title: "Notifications & Alerts",
-      subtitle: "Manage notification preferences",
-    },
-    {
-      id: "data",
-      icon: "📊",
-      title: "Data & Transparency",
-      subtitle: "Control your data and permissions",
-    },
-    {
-      id: "accessibility",
-      icon: "⚙",
-      title: "Accessibility & UI",
-      subtitle: "Customize your experience",
-    },
   ];
 
   // Default placeholder profile image
   const defaultProfileIcon =
     "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-
-  // Update profile
-  const handleProfileUpdate = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/settings/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          profilePic: profilePic,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || "Failed to update profile");
-        return;
-      }
-
-      alert("Profile updated successfully!");
-    } catch (err) {
-      console.error("❌ Error:", err);
-      alert("Something went wrong. Try again.");
-    }
-  };
-
-  // Update password
-  const handlePasswordUpdate = async (e) => {
-  e.preventDefault();
-  try {
-    const token = localStorage.getItem("token"); // or however you store JWT
-
-    const res = await fetch("http://localhost:5000/api/settings/update-password", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert("✅ Password updated successfully!");
-      // clear fields after success
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } else {
-      alert(`❌ ${data.error}`);
-    }
-  } catch (err) {
-    console.error("Error updating password:", err);
-    alert("⚠️ Server error while updating password");
-  }
+    // Handle sidebar section change
+const handleSectionChange = (sectionId) => {
+  setActiveSection(sectionId);
+  setSuccessMessage(""); // clear old success messages
+  setErrorMessage("");   // clear old error messages
 };
 
 
-  // Remove profile picture
-  const handleRemoveProfilePic = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/settings/remove-profile-pic",
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || "Failed to remove profile picture");
-        return;
-      }
-
-      setProfilePic(null);
-      alert("Profile picture removed successfully");
-    } catch (err) {
-      console.error("❌ Error:", err);
-      alert("Something went wrong. Try again.");
-    }
-  };
+  
 
   // Render content by section
   const renderContent = () => {
     switch (activeSection) {
       case "profile":
         return (
-          <div className="bg-white rounded-xl p-6 w-full h-full">
+          <div className="bg-green-50 rounded-xl p-6 w-full h-full">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-semibold text-gray-800">
                 Profile & Personal Information
@@ -282,7 +296,6 @@ const SettingsPage = () => {
                     >
                       Remove profilepic
                     </button>
-
                     <button
                       onClick={() =>
                         document.getElementById("fileInput").click()
@@ -352,7 +365,7 @@ const SettingsPage = () => {
 
       case "security":
         return (
-          <div className="bg-white rounded-xl p-6">
+          <div className="bg-green-50 rounded-xl p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
               Security & Privacy
             </h2>
@@ -390,68 +403,72 @@ const SettingsPage = () => {
           </div>
         );
 
-      case "notifications":
-        return (
-          <div className="bg-white rounded-xl p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              Notifications & Alerts
-            </h2>
-            <label className="flex items-center mb-4">
-              <input
-                type="checkbox"
-                checked={petitionEmails}
-                onChange={() => setPetitionEmails(!petitionEmails)}
-                className="mr-3 w-4 h-4"
-              />
-              <span className="text-gray-700">
-                Receive email updates for petitions
-              </span>
-            </label>
-          </div>
-        );
-
-      case "data":
-        return (
-          <div className="bg-white rounded-xl p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              Data & Transparency
-            </h2>
-            <p className="text-gray-600 mb-4">
-              You can download a copy of your data for transparency.
-            </p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-              Download My Data
-            </button>
-          </div>
-        );
-
-      case "accessibility":
-        return (
-          <div className="bg-white rounded-xl p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              Accessibility & UI
-            </h2>
-            <p className="text-gray-600">
-              Customize your interface settings here.
-            </p>
-          </div>
-        );
-
       default:
         return null;
     }
   };
+ 
+
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    
+    <div className="flex min-h-screen bg-green-50">
+
+    {/* Success Message (center, auto disappear) */}
+{/* Success Message (center popup, auto disappear in 3s) */}
+{successMessage && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="bg-white border-l-4 border-green-500 shadow-xl rounded-xl px-6 py-4 flex items-center space-x-3 animate-fade-in-out">
+      {/* Icon */}
+      <svg
+        className="w-7 h-7 text-green-500 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      {/* Message */}
+      <span className="text-green-700 font-semibold text-lg">
+        {successMessage}
+      </span>
+    </div>
+  </div>
+)}
+<style>
+  {`
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: scale(0.95); }
+      10% { opacity: 1; transform: scale(1); }
+      90% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.95); }
+    }
+    .animate-fade-in-out {
+      animation: fadeInOut 3s ease-in-out forwards;
+    }
+  `}
+</style>
+
+
+{/* Error Message (top-right, stays until changed) */}
+<div className="fixed top-5 right-5 z-50">
+  {errorMessage && (
+    <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg shadow-md">
+      {errorMessage}
+    </div>
+  )}
+</div>
+
+
       {/* Sidebar */}
-      <div className="w-80 bg-white p-6 shadow-lg">
+      <div className="w-80 bg-green-50 p-6 shadow-lg">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Settings</h1>
         <div className="space-y-2">
           {sidebarItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => handleSectionChange(item.id)}
               className={`w-full text-left p-4 rounded-xl transition-all hover:bg-gray-50 ${
                 activeSection === item.id
                   ? "bg-blue-50 border-l-4 border-blue-500"
