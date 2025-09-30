@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const sidebarItems = [
   {
@@ -319,7 +319,7 @@ const OfficialSettings = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-green-50">
+    <div className="flex min-h-screen bg-green-50 ">
       {/* Success Message */}
       {successMessage && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
@@ -371,7 +371,7 @@ const OfficialSettings = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 bg-green-50 shadow-sm">{renderContent()}</div>
+      <div className="flex-1 p-6 bg-green-50 shadow-sm ">{renderContent()}</div>
     </div>
   );
 };
