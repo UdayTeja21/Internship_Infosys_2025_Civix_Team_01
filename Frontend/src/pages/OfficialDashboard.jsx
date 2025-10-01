@@ -603,7 +603,7 @@ const OfficialDashboard = () => {
                                                         setClosesOn(poll.closeDate?.slice(0, 10) || '');
                                                         setShowPollModal(true);
                                                     }}
-                                                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-xs md:text-base font-bold shadow hover:bg-yellow-600 transition-all duration-150"
+                                                    className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-xs md:text-base font-bold shadow hover:bg-yellow-600 transition-all duration-150"
                                                     style={{ minWidth: 70 }}
                                                 >
                                                     ✏️ Edit
@@ -611,7 +611,7 @@ const OfficialDashboard = () => {
                                             )}
                                             <button
                                                 onClick={() => handleDeletePoll(poll._id)}
-                                                className="bg-red-600 text-white px-4 py-2 md:px-8 md:py-3 rounded-lg md:rounded-xl text-xs md:text-lg font-bold md:font-extrabold shadow md:shadow-lg border-2 border-red-800 flex items-center gap-2 hover:bg-red-700 hover:scale-105 transition-all duration-150"
+                                                className="bg-red-600 text-white px-4 py-2 md:px-1 md:py-1 rounded-lg md:rounded-xl text-xs md:text-lg font-bold md:font-extrabold shadow md:shadow-lg border-2 border-red-800 flex items-center gap-2 hover:bg-red-700 hover:scale-105 transition-all duration-150"
                                                 style={{ minWidth: 120 }}
                                                 title="Close this poll"
                                             >
