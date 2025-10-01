@@ -41,8 +41,8 @@ const ToastModal = ({ message, onClose, show, type = "success" }) => {
     if (!show) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
-            <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6 flex flex-col items-center">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30 px-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-auto p-6 flex flex-col items-center">
                 <div className={`mb-4 text-4xl ${type === "success" ? "text-green-500" : "text-red-500"}`}>
                     {type === "success" ? "✔️" : "❌"}
                 </div>
@@ -50,7 +50,7 @@ const ToastModal = ({ message, onClose, show, type = "success" }) => {
                 <div className="text-sm text-gray-500 mb-4 text-center">This popup will close automatically.</div>
                 <button
                     onClick={onClose}
-                    className={`px-6 py-2 rounded-lg font-semibold ${
+                    className={`px-6 py-2 rounded-lg font-semibold w-full sm:w-auto ${
                         type === "success" ? "bg-green-600 text-white hover:bg-green-700" : "bg-red-600 text-white hover:bg-red-700"
                     }`}
                 >
@@ -65,7 +65,7 @@ const ToastModal = ({ message, onClose, show, type = "success" }) => {
 const MobileNav = ({ activeTab, handleNavClick, navigationItems, userInfo, handleSignOutClick, setShowMobileNav }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden">
-            <div className="fixed left-0 top-0 h-full w-80 bg-gradient-to-b from-green-300 to-green-400 p-6 shadow-xl flex flex-col">
+            <div className="fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-gradient-to-b from-green-300 to-green-400 p-6 shadow-xl flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center text-green-800">
                         <div className="text-3xl mr-3">🏛️</div>
@@ -83,7 +83,7 @@ const MobileNav = ({ activeTab, handleNavClick, navigationItems, userInfo, handl
                     <div className="text-lg font-bold text-green-800 mb-1">{userInfo.fullName}</div>
                     <div className="text-green-700 text-sm mb-2">{userInfo.email}</div>
                 </div>
-                <nav className="flex-1">
+                <nav className="flex-1 overflow-y-auto">
                     {navigationItems.map((item) => (
                         <div key={item.id} className={`flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40 ${activeTab === item.id ? 'bg-white bg-opacity-50' : ''}`} 
                              onClick={() => { handleNavClick(item.id); setShowMobileNav(false); }}>
@@ -98,6 +98,32 @@ const MobileNav = ({ activeTab, handleNavClick, navigationItems, userInfo, handl
                          onClick={() => { handleSignOutClick(); setShowMobileNav(false); }}>
                         <span className="mr-3 text-lg">🚪</span> Sign Out
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Mobile Header Component
+const MobileHeader = ({ userInfo, setShowMobileNav, activeTab, firstName }) => {
+    return (
+        <div className="lg:hidden bg-gradient-to-r from-green-300 to-green-400 p-4 shadow-lg sticky top-0 z-30">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                    <button 
+                        onClick={() => setShowMobileNav(true)}
+                        className="text-2xl text-green-800 mr-4"
+                    >
+                        ☰
+                    </button>
+                    <div className="flex items-center text-green-800">
+                        <div className="text-2xl mr-2">🏛️</div>
+                        <div className="text-xl font-bold">CIVIX</div>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <div className="text-sm font-semibold text-green-800">{firstName}</div>
+                    <div className="text-xs text-green-700">{activeTab}</div>
                 </div>
             </div>
         </div>
@@ -227,20 +253,23 @@ const OfficialDashboard = () => {
     };
     const handleFormChange = (e) => setResponseForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const submitResponse = async () => {
-        if (!selectedPetition || !responseForm.message.trim()) return alert('Please fill in the response message');
+        if (!selectedPetition || !responseForm.message.trim()) {
+            setToast({ show: true, message: "Please fill in the response message", type: "error" });
+            return;
+        }
         setIsSubmitting(true);
         try {
             await API.respondToPetition(selectedPetition._id, {
                 ...responseForm,
                 respondedBy: userInfo?.fullName || 'Public Official'
             });
-            alert('Response submitted successfully!');
+            setToast({ show: true, message: "Response submitted successfully!", type: "success" });
             closeResponseModal();
             fetchPetitions();
             fetchStats();
         } catch (error) {
             console.error('Error submitting response:', error);
-            alert('Failed to submit response. Please try again.');
+            setToast({ show: true, message: "Failed to submit response. Please try again.", type: "error" });
         } finally {
             setIsSubmitting(false);
         }
@@ -303,7 +332,7 @@ const OfficialDashboard = () => {
             });
             setShowResultsModal(true);
         } catch (err) {
-            alert('Failed to fetch poll results');
+            setToast({ show: true, message: "Failed to fetch poll results", type: "error" });
         }
     };
     const handleDeletePoll = (pollId) => {
@@ -420,55 +449,57 @@ const OfficialDashboard = () => {
             case 'dashboard':
                 return (
                     <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-green-400">
-                                <div className="text-gray-600 text-sm">Total Petitions</div>
-                                <div className="text-2xl md:text-3xl font-bold text-green-800">{stats.petitions}</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
+                            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border-l-4 border-green-400">
+                                <div className="text-gray-600 text-sm md:text-base">Total Petitions</div>
+                                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-green-800">{stats.petitions}</div>
                             </div>
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-blue-400">
-                                <div className="text-gray-600 text-sm">Total Active Polls</div>
-                                <div className="text-2xl md:text-3xl font-bold text-green-800">{polls.length}</div>
+                            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border-l-4 border-blue-400">
+                                <div className="text-gray-600 text-sm md:text-base">Total Active Polls</div>
+                                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-green-800">{polls.length}</div>
                             </div>
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-purple-400">
-                                <div className="text-gray-600 text-sm">Response Rate</div>
-                                <div className="text-2xl md:text-3xl font-bold text-green-800">{stats.responseRate}</div>
+                            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border-l-4 border-purple-400">
+                                <div className="text-gray-600 text-sm md:text-base">Response Rate</div>
+                                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-green-800">{stats.responseRate}</div>
                             </div>
-                            <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border-l-4 border-orange-400">
-                                <div className="text-gray-600 text-sm">Civic Participation Rate</div>
-                                <div className="text-2xl md:text-3xl font-bold text-green-800">{stats.civicParticipationRate}</div>
+                            <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border-l-4 border-orange-400">
+                                <div className="text-gray-600 text-sm md:text-base">Civic Participation Rate</div>
+                                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-green-800">{stats.civicParticipationRate}</div>
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
                             <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg lg:col-span-2">
                                 <h2 className="text-lg md:text-xl font-bold text-green-800 mb-4">Recent Petitions</h2>
-                                {petitions.slice(0, 5).map(p => (
-                                    <div key={p._id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg mb-2 hover:bg-gray-100 transition-colors">
-                                        <div className="mb-2 sm:mb-0">
-                                            <p className="font-medium text-green-800 text-sm md:text-base">{p.title}</p>
-                                            <p className="text-xs text-gray-500">{p.signatures?.length || 0} signatures</p>
+                                <div className="space-y-3">
+                                    {petitions.slice(0, 5).map(p => (
+                                        <div key={p._id} className="flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                            <div className="mb-2 sm:mb-0 flex-1">
+                                                <p className="font-medium text-green-800 text-sm md:text-base mb-1">{p.title}</p>
+                                                <p className="text-xs text-gray-500">{p.signatures?.length || 0} signatures</p>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusConfig(p.status).class} self-start sm:self-auto`}>
+                                                {getStatusConfig(p.status).text}
+                                            </span>
                                         </div>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusConfig(p.status).class} self-start sm:self-auto`}>
-                                            {getStatusConfig(p.status).text}
-                                        </span>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg">
                                 <h2 className="text-lg md:text-xl font-bold text-green-800 mb-4 md:mb-6">Community Engagement</h2>
-                                <div className="space-y-4 md:space-y-6">
+                                <div className="space-y-3 md:space-y-4">
                                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                         <span className="text-gray-600 font-medium text-sm md:text-base">Active Users (7d)</span>
-                                        <span className="text-xl md:text-2xl font-bold text-green-800">{engagement.activeUsers}</span>
+                                        <span className="text-lg md:text-xl font-bold text-green-800">{engagement.activeUsers}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                         <span className="text-gray-600 font-medium text-sm md:text-base">Civic Participation</span>
-                                        <span className="text-xl md:text-2xl font-bold text-green-800">{engagement.civicParticipationRate}</span>
+                                        <span className="text-lg md:text-xl font-bold text-green-800">{engagement.civicParticipationRate}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                         <span className="text-gray-600 font-medium text-sm md:text-base">Avg. Response Time</span>
-                                        <span className="text-xl md:text-2xl font-bold text-green-800">{engagement.avgResponseTime} <span className="text-xs md:text-sm">days</span></span>
+                                        <span className="text-lg md:text-xl font-bold text-green-800">{engagement.avgResponseTime} <span className="text-xs">days</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -477,66 +508,66 @@ const OfficialDashboard = () => {
                 );
             case 'petitions':
                 return (
-                    <div className="space-y-6">
-                        <div className="bg-gradient-to-b from-green-300 to-green-400 rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-2xl text-green-800">
+                    <div className="space-y-4 md:space-y-6">
+                        <div className="bg-gradient-to-b from-green-300 to-green-400 rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg text-green-800">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div>
-                                    <h2 className="text-2xl md:text-3xl font-bold mb-2">📋 Petitions Management</h2>
-                                    <p className="text-white text-sm md:text-lg">Review and respond to community petitions</p>
+                                <div className="flex-1">
+                                    <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2">📋 Petitions Management</h2>
+                                    <p className="text-white text-sm md:text-base">Review and respond to community petitions</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="bg-white bg-opacity-20 rounded-xl p-3 md:p-4">
-                                        <div className="text-xl md:text-2xl font-bold">{petitions.length}</div>
+                                    <div className="bg-white bg-opacity-20 rounded-lg md:rounded-xl p-3 md:p-4">
+                                        <div className="text-lg md:text-xl lg:text-2xl font-bold">{petitions.length}</div>
                                         <div className="text-xs md:text-sm text-green-800">Total Petitions</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid gap-4 md:gap-6">
+                        <div className="space-y-4">
                             {petitions.length > 0 ? petitions.map((p) => {
                                 const isResponded = ['responded', 'approved', 'rejected'].includes(p.status);
                                 return (
-                                    <div key={p._id} className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-green-200">
-                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                                    <div key={p._id} className="bg-white rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-green-200">
+                                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                                             <div className="flex-1">
                                                 <div className="flex items-start gap-3 md:gap-4 mb-4">
                                                     <div className="bg-green-100 rounded-full p-2 md:p-3 flex-shrink-0">
                                                         <div className="text-green-600 text-lg md:text-xl">📄</div>
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">{p.title}</h3>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-2 truncate">{p.title}</h3>
                                                         <p className="text-gray-600 leading-relaxed line-clamp-2 text-sm md:text-base">{p.description}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="bg-blue-50 rounded-full p-1"><div className="text-blue-600 text-xs md:text-sm">👤</div></div>
-                                                        <span className="text-xs md:text-sm text-gray-600"><span className="font-medium">By:</span> {p.creator?.fullName || 'Anonymous'}</span>
+                                                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4">
+                                                    <div className="flex items-center gap-1 md:gap-2">
+                                                        <div className="bg-blue-50 rounded-full p-1"><div className="text-blue-600 text-xs">👤</div></div>
+                                                        <span className="text-xs text-gray-600"><span className="font-medium">By:</span> {p.creator?.fullName || 'Anonymous'}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="bg-purple-50 rounded-full p-1"><div className="text-purple-600 text-xs md:text-sm">✍️</div></div>
-                                                        <span className="text-xs md:text-sm text-gray-600"><span className="font-medium">{p.signatures?.length || 0}</span> signatures</span>
+                                                    <div className="flex items-center gap-1 md:gap-2">
+                                                        <div className="bg-purple-50 rounded-full p-1"><div className="text-purple-600 text-xs">✍️</div></div>
+                                                        <span className="text-xs text-gray-600"><span className="font-medium">{p.signatures?.length || 0}</span> signatures</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="bg-gray-50 rounded-full p-1"><div className="text-gray-600 text-xs md:text-sm">📅</div></div>
-                                                        <span className="text-xs md:text-sm text-gray-600">{new Date(p.createdAt).toLocaleDateString()}</span>
+                                                    <div className="flex items-center gap-1 md:gap-2">
+                                                        <div className="bg-gray-50 rounded-full p-1"><div className="text-gray-600 text-xs">📅</div></div>
+                                                        <span className="text-xs text-gray-600">{new Date(p.createdAt).toLocaleDateString()}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className={`inline-flex items-center px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold ${getStatusConfig(p.status).class} shadow-sm`}>
-                                                        <div className="w-2 h-2 rounded-full bg-current mr-2 opacity-70"></div>
+                                                    <span className={`inline-flex items-center px-2 py-1 md:px-3 md:py-1 rounded-full text-xs font-semibold ${getStatusConfig(p.status).class}`}>
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-70"></div>
                                                         {getStatusConfig(p.status).text}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-2 md:gap-3">
+                                            <div className="flex flex-col gap-2 sm:flex-row lg:flex-col sm:justify-end">
                                                 <button
                                                     onClick={() => respondToPetition(p)}
                                                     disabled={isResponded}
-                                                    className={`px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 min-w-[100px] md:min-w-[120px] ${
+                                                    className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs font-semibold transition-all duration-200 min-w-[100px] ${
                                                         isResponded
                                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:-translate-y-0.5'
+                                                            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
                                                         }`}
                                                 >
                                                     {isResponded ? '✅ Responded' : '💬 Respond'}
@@ -546,7 +577,7 @@ const OfficialDashboard = () => {
                                     </div>
                                 );
                             }) : (
-                                <div className="text-center py-12 bg-white rounded-xl md:rounded-2xl shadow-lg">
+                                <div className="text-center py-8 md:py-12 bg-white rounded-xl shadow-lg">
                                     <div className="text-4xl md:text-6xl mb-4">📭</div>
                                     <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">No Petitions Found</h3>
                                     <p className="text-gray-500 text-sm md:text-base">There are currently no petitions to review.</p>
@@ -557,9 +588,9 @@ const OfficialDashboard = () => {
                 );
             case 'polls':
                 return (
-                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-8 shadow-lg">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-green-900">Polls Management</h2>
+                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                            <h2 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-green-900">Polls Management</h2>
                             <button
                                 onClick={() => {
                                     setEditingPoll(null);
@@ -570,16 +601,16 @@ const OfficialDashboard = () => {
                                     setClosesOn('');
                                     setShowPollModal(true);
                                 }}
-                                className="bg-green-800 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg hover:bg-green-700 font-semibold shadow text-sm md:text-base"
+                                className="bg-green-800 text-white px-4 py-2 md:px-5 md:py-3 rounded-lg hover:bg-green-700 font-semibold shadow text-sm md:text-base w-full md:w-auto"
                             >
                                 ＋ Create New Poll
                             </button>
                         </div>
-                        <div className="space-y-4 md:space-y-6">
+                        <div className="space-y-4">
                             {polls.length > 0 ? polls.map((poll) => (
-                                <div key={poll._id} className="bg-gray-50 p-4 md:p-6 rounded-lg md:rounded-xl border-2 border-green-500 shadow-sm">
+                                <div key={poll._id} className="bg-gray-50 p-4 md:p-6 rounded-lg border-2 border-green-500 shadow-sm">
                                     <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                                        <h3 className="text-lg md:text-xl font-bold text-green-900">{poll.title}</h3>
+                                        <h3 className="text-base md:text-lg lg:text-xl font-bold text-green-900 truncate">{poll.title}</h3>
                                         {poll.isOfficial && (
                                             <span className="px-2 py-1 bg-yellow-300 text-yellow-900 rounded-full text-xs font-bold flex items-center gap-1 self-start md:self-auto">
                                                 <span>★</span> Official Poll
@@ -603,32 +634,30 @@ const OfficialDashboard = () => {
                                                         setClosesOn(poll.closeDate?.slice(0, 10) || '');
                                                         setShowPollModal(true);
                                                     }}
-                                                    className="bg-yellow-500 text-white px-3 py-1 rounded-lg text-xs md:text-base font-bold shadow hover:bg-yellow-600 transition-all duration-150"
-                                                    style={{ minWidth: 70 }}
+                                                    className="bg-yellow-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:bg-yellow-600 transition-all duration-150"
                                                 >
                                                     ✏️ Edit
                                                 </button>
                                             )}
                                             <button
                                                 onClick={() => handleDeletePoll(poll._id)}
-                                                className="bg-red-600 text-white px-4 py-2 md:px-1 md:py-1 rounded-lg md:rounded-xl text-xs md:text-lg font-bold md:font-extrabold shadow md:shadow-lg border-2 border-red-800 flex items-center gap-2 hover:bg-red-700 hover:scale-105 transition-all duration-150"
-                                                style={{ minWidth: 120 }}
+                                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow border-2 border-red-800 flex items-center gap-1 hover:bg-red-700 transition-all duration-150"
                                                 title="Close this poll"
                                             >
                                                 <span role="img" aria-label="close">🛑</span>
-                                                Close Poll
+                                                Close
                                             </button>
                                         </div>
                                     </div>
                                     {poll.description && (
-                                        <p className="text-gray-700 mb-3 text-sm md:text-base">{poll.description}</p>
+                                        <p className="text-gray-700 mb-3 text-sm md:text-base line-clamp-2">{poll.description}</p>
                                     )}
                                     {poll.options && (
                                         <div className="space-y-2 mt-2">
                                             {poll.options.map((opt, idx) => (
-                                                <div key={idx} className="flex justify-between items-center bg-green-100 px-2 py-1 md:px-3 md:py-2 rounded">
-                                                    <span className="font-semibold text-green-900 text-xs md:text-sm">{opt.text}</span>
-                                                    <span className="font-bold text-green-800 bg-green-200 px-2 py-1 md:px-3 md:py-1 rounded text-xs md:text-base">{opt.votes ?? 0} votes</span>
+                                                <div key={idx} className="flex justify-between items-center bg-green-100 px-2 py-1.5 md:px-3 md:py-2 rounded">
+                                                    <span className="font-semibold text-green-900 text-xs md:text-sm truncate">{opt.text}</span>
+                                                    <span className="font-bold text-green-800 bg-green-200 px-2 py-1 rounded text-xs">{opt.votes ?? 0} votes</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -641,8 +670,8 @@ const OfficialDashboard = () => {
                     </div>
                 );
             case 'reports':
-                if (isReportLoading) return <div className="text-center p-10 bg-white rounded-xl shadow-lg">Loading Report...</div>;
-                if (!reportsData) return <div className="text-center p-10 text-red-500 bg-white rounded-xl shadow-lg">Could not load report data.</div>;
+                if (isReportLoading) return <div className="text-center p-6 md:p-10 bg-white rounded-xl shadow-lg">Loading Report...</div>;
+                if (!reportsData) return <div className="text-center p-6 md:p-10 text-red-500 bg-white rounded-xl shadow-lg">Could not load report data.</div>;
                 
                 const statusChartData = { labels: ['Responded', 'Awaiting Response'], datasets: [{ data: [reportsData.respondedCount, reportsData.pendingCount], backgroundColor: ['rgba(34, 197, 94, 0.8)', 'rgba(249, 115, 22, 0.8)'], borderWidth: 2, borderColor: ['rgba(34, 197, 94, 1)', 'rgba(249, 115, 22, 1)'] }] };
                 
@@ -666,171 +695,174 @@ const OfficialDashboard = () => {
                 };
                 
                 return (
-                    <div className="space-y-10">
+                    <div className="space-y-6 md:space-y-8 lg:space-y-10">
                         {/* Enhanced Header Section */}
-                        <div className="bg-gradient-to-r from-green-300 via-green-400 to-green-500 rounded-3xl p-10 shadow-2xl text-green-800">
-                            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-2xl p-4">
-                                        <div className="text-4xl">📊</div>
+                        <div className="bg-gradient-to-r from-green-300 via-green-400 to-green-500 rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg text-green-800">
+                            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-6">
+                                <div className="flex items-center gap-3 md:gap-4">
+                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-4">
+                                        <div className="text-2xl md:text-3xl lg:text-4xl">📊</div>
                                     </div>
                                     <div>
-                                        <h2 className="text-4xl font-bold mb-2">Analytics Dashboard</h2>
-                                        <p className="text-green-700 text-lg">Comprehensive civic engagement insights</p>
+                                        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">Analytics Dashboard</h2>
+                                        <p className="text-green-700 text-sm md:text-base lg:text-lg">Comprehensive civic engagement insights</p>
                                     </div>
                                 </div>
                                 <div className="text-center lg:text-right">
-                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-2xl p-6 min-w-[160px]">
-                                        <div className="text-4xl font-bold mb-1">{((reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100).toFixed(0)}%</div>
-                                        <div className="text-sm text-green-700 font-semibold">Overall Response Rate</div>
+                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 lg:p-6 min-w-[120px] md:min-w-[160px]">
+                                        <div className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1">{((reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100).toFixed(0)}%</div>
+                                        <div className="text-xs md:text-sm text-green-700 font-semibold">Overall Response Rate</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Enhanced Stats Cards Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-                            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 group">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="bg-blue-100 rounded-2xl p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-blue-600 text-3xl">📋</div></div>
-                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Total</div><div className="text-4xl font-bold text-blue-600">{reportsData.totalPetitions || 0}</div></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+                            <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                <div className="flex items-center justify-between mb-4 md:mb-6">
+                                    <div className="bg-blue-100 rounded-xl md:rounded-2xl p-3 md:p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-blue-600 text-xl md:text-2xl lg:text-3xl">📋</div></div>
+                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Total</div><div className="text-2xl md:text-3xl lg:text-4xl font-bold text-blue-600">{reportsData.totalPetitions || 0}</div></div>
                                 </div>
-                                <h3 className="text-gray-800 font-bold text-lg mb-2">Total Petitions</h3>
-                                <p className="text-sm text-gray-600">All submitted community requests</p>
-                                <div className="mt-4 h-1 bg-blue-100 rounded-full"><div className="h-1 bg-blue-500 rounded-full w-full"></div></div>
+                                <h3 className="text-gray-800 font-bold text-base md:text-lg mb-2">Total Petitions</h3>
+                                <p className="text-xs md:text-sm text-gray-600">All submitted community requests</p>
+                                <div className="mt-3 md:mt-4 h-1 bg-blue-100 rounded-full"><div className="h-1 bg-blue-500 rounded-full w-full"></div></div>
                             </div>
-                            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 group">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="bg-green-100 rounded-2xl p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-green-600 text-3xl">✅</div></div>
-                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Completed</div><div className="text-4xl font-bold text-green-600">{reportsData.respondedCount || 0}</div></div>
+                            <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                <div className="flex items-center justify-between mb-4 md:mb-6">
+                                    <div className="bg-green-100 rounded-xl md:rounded-2xl p-3 md:p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-green-600 text-xl md:text-2xl lg:text-3xl">✅</div></div>
+                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Completed</div><div className="text-2xl md:text-3xl lg:text-4xl font-bold text-green-600">{reportsData.respondedCount || 0}</div></div>
                                 </div>
-                                <h3 className="text-gray-800 font-bold text-lg mb-2">Responded</h3>
-                                <p className="text-sm text-gray-600">Successfully addressed petitions</p>
-                                <div className="mt-4 h-1 bg-green-100 rounded-full"><div className="h-1 bg-green-500 rounded-full" style={{width: `${(reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100}%`}}></div></div>
+                                <h3 className="text-gray-800 font-bold text-base md:text-lg mb-2">Responded</h3>
+                                <p className="text-xs md:text-sm text-gray-600">Successfully addressed petitions</p>
+                                <div className="mt-3 md:mt-4 h-1 bg-green-100 rounded-full"><div className="h-1 bg-green-500 rounded-full" style={{width: `${(reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100}%`}}></div></div>
                             </div>
-                            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 group">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="bg-orange-100 rounded-2xl p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-orange-600 text-3xl">⏳</div></div>
-                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Pending</div><div className="text-4xl font-bold text-orange-600">{reportsData.pendingCount || 0}</div></div>
+                            <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                <div className="flex items-center justify-between mb-4 md:mb-6">
+                                    <div className="bg-orange-100 rounded-xl md:rounded-2xl p-3 md:p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-orange-600 text-xl md:text-2xl lg:text-3xl">⏳</div></div>
+                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Pending</div><div className="text-2xl md:text-3xl lg:text-4xl font-bold text-orange-600">{reportsData.pendingCount || 0}</div></div>
                                 </div>
-                                <h3 className="text-gray-800 font-bold text-lg mb-2">Awaiting Response</h3>
-                                <p className="text-sm text-gray-600">Requires immediate attention</p>
-                                <div className="mt-4 h-1 bg-orange-100 rounded-full"><div className="h-1 bg-orange-500 rounded-full" style={{width: `${(reportsData.pendingCount / (reportsData.totalPetitions || 1)) * 100}%`}}></div></div>
+                                <h3 className="text-gray-800 font-bold text-base md:text-lg mb-2">Awaiting Response</h3>
+                                <p className="text-xs md:text-sm text-gray-600">Requires immediate attention</p>
+                                <div className="mt-3 md:mt-4 h-1 bg-orange-100 rounded-full"><div className="h-1 bg-orange-500 rounded-full" style={{width: `${(reportsData.pendingCount / (reportsData.totalPetitions || 1)) * 100}%`}}></div></div>
                             </div>
-                            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 group">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="bg-purple-100 rounded-2xl p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-purple-600 text-3xl">⚡</div></div>
-                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Average</div><div className="text-4xl font-bold text-purple-600">{reportsData.averageResponseTimeDays || 'N/A'}</div></div>
+                            <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                <div className="flex items-center justify-between mb-4 md:mb-6">
+                                    <div className="bg-purple-100 rounded-xl md:rounded-2xl p-3 md:p-4 group-hover:scale-110 transition-transform duration-300"><div className="text-purple-600 text-xl md:text-2xl lg:text-3xl">⚡</div></div>
+                                    <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Average</div><div className="text-2xl md:text-3xl lg:text-4xl font-bold text-purple-600">{reportsData.averageResponseTimeDays || 'N/A'}</div></div>
                                 </div>
-                                <h3 className="text-gray-800 font-bold text-lg mb-2">Response Time</h3>
-                                <p className="text-sm text-gray-600">Days to provide response</p>
-                                <div className="mt-4 h-1 bg-purple-100 rounded-full"><div className="h-1 bg-purple-500 rounded-full w-3/4"></div></div>
+                                <h3 className="text-gray-800 font-bold text-base md:text-lg mb-2">Response Time</h3>
+                                <p className="text-xs md:text-sm text-gray-600">Days to provide response</p>
+                                <div className="mt-3 md:mt-4 h-1 bg-purple-100 rounded-full"><div className="h-1 bg-purple-500 rounded-full w-3/4"></div></div>
                             </div>
                         </div>
 
                         {/* Pie Charts Section */}
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100">
-                                <div className="text-center mb-10"><h3 className="text-2xl font-bold text-gray-800">Response Status Distribution</h3><p className="text-gray-600">Breakdown of petition response status</p></div>
-                                <div className="w-full h-80"><Doughnut data={statusChartData} options={{ cutout: '65%', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}} /></div>
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8 lg:gap-10">
+                            <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg border border-gray-100">
+                                <div className="text-center mb-6 md:mb-8 lg:mb-10"><h3 className="text-xl md:text-2xl font-bold text-gray-800">Response Status Distribution</h3><p className="text-gray-600 text-sm md:text-base">Breakdown of petition response status</p></div>
+                                <div className="w-full h-64 md:h-72 lg:h-80"><Doughnut data={statusChartData} options={{ cutout: '65%', responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}} /></div>
                             </div>
                             {categoryChartData.labels.length > 0 && (
-                                <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100">
-                                    <div className="text-center mb-10"><h3 className="text-2xl font-bold text-gray-800">Petitions by Category</h3><p className="text-gray-600">Distribution across categories</p></div>
-                                    <div className="w-full h-80"><Pie data={categoryChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}} /></div>
+                                <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg border border-gray-100">
+                                    <div className="text-center mb-6 md:mb-8 lg:mb-10"><h3 className="text-xl md:text-2xl font-bold text-gray-800">Petitions by Category</h3><p className="text-gray-600 text-sm md:text-base">Distribution across categories</p></div>
+                                    <div className="w-full h-64 md:h-72 lg:h-80"><Pie data={categoryChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}} /></div>
                                 </div>
                             )}
                         </div>
 
                         {/* Engagement and Responsiveness Charts */}
-                        <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100">
-                           <div className="text-center mb-8">
-                               <h3 className="text-2xl font-bold text-gray-800 mb-2">Engagement Over Time</h3>
-                               <p className="text-gray-600">New petitions and signatures over the last 30 days.</p>
+                        <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg border border-gray-100">
+                           <div className="text-center mb-6 md:mb-8">
+                               <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Engagement Over Time</h3>
+                               <p className="text-gray-600 text-sm md:text-base">New petitions and signatures over the last 30 days.</p>
                            </div>
-                           <Line data={engagementChartData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }} />
+                           <div className="h-64 md:h-72 lg:h-80">
+                               <Line data={engagementChartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }} />
+                           </div>
                         </div>
 
                         {responseTimeChartData.labels.length > 0 && (
-                           <div className="bg-white rounded-3xl p-10 shadow-xl border border-gray-100">
-                               <div className="text-center mb-8">
-                                   <h3 className="text-2xl font-bold text-gray-800 mb-2">Official Responsiveness by Category</h3>
-                                   <p className="text-gray-600">Average time to respond to petitions, grouped by category.</p>
+                           <div className="bg-white rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg border border-gray-100">
+                               <div className="text-center mb-6 md:mb-8">
+                                   <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Official Responsiveness by Category</h3>
+                                   <p className="text-gray-600 text-sm md:text-base">Average time to respond to petitions, grouped by category.</p>
                                </div>
-                               <Bar data={responseTimeChartData} options={{ indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }} />
+                               <div className="h-64 md:h-72 lg:h-80">
+                                   <Bar data={responseTimeChartData} options={{ indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
+                               </div>
                            </div>
                         )}
 
                         {/* Performance Insights Section */}
-                        <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-3xl p-10 shadow-xl border border-gray-200">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="bg-indigo-100 rounded-2xl p-4">
-                                    <div className="text-indigo-600 text-3xl">💡</div>
+                        <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-xl md:rounded-2xl lg:rounded-3xl p-6 md:p-8 lg:p-10 shadow-lg border border-gray-200">
+                            <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                                <div className="bg-indigo-100 rounded-xl md:rounded-2xl p-3 md:p-4">
+                                    <div className="text-indigo-600 text-xl md:text-2xl lg:text-3xl">💡</div>
                                 </div>
                                 <div>
-                                    <h3 className="text-3xl font-bold text-gray-800 mb-2">Performance Insights</h3>
-                                    <p className="text-gray-600">Key metrics and operational efficiency analysis</p>
+                                    <h3 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Performance Insights</h3>
+                                    <p className="text-gray-600 text-sm md:text-base">Key metrics and operational efficiency analysis</p>
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-blue-100 rounded-xl p-2">
-                                            <div className="text-blue-600 text-xl">⚡</div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8">
+                                <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100">
+                                    <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                                        <div className="bg-blue-100 rounded-lg md:rounded-xl p-2">
+                                            <div className="text-blue-600 text-lg md:text-xl">⚡</div>
                                         </div>
-                                        <h4 className="font-bold text-gray-800 text-xl">Response Efficiency</h4>
+                                        <h4 className="font-bold text-gray-800 text-lg md:text-xl">Response Efficiency</h4>
                                     </div>
-                                    <div className="space-y-6">
+                                    <div className="space-y-4 md:space-y-6">
                                         <div>
-                                            <div className="flex justify-between mb-3">
+                                            <div className="flex justify-between mb-2 md:mb-3">
                                                 <span className="text-sm text-gray-700 font-medium">Overall Response Rate</span>
-                                                <span className="font-bold text-indigo-600 text-lg">{((reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100).toFixed(1)}%</span>
+                                                <span className="font-bold text-indigo-600 text-base md:text-lg">{((reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100).toFixed(1)}%</span>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                                            <div className="w-full bg-gray-200 rounded-full h-2 md:h-3 shadow-inner">
                                                 <div 
-                                                    className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full transition-all duration-1000 shadow-sm" 
+                                                    className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-2 md:h-3 rounded-full transition-all duration-1000 shadow-sm" 
                                                     style={{width: `${(reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100}%`}}
                                                 ></div>
                                             </div>
                                         </div>
-                                        <div className="pt-4 border-t border-gray-100">
-                                            <div className="text-sm text-gray-600">
+                                        <div className="pt-3 md:pt-4 border-t border-gray-100">
+                                            <div className="text-xs md:text-sm text-gray-600">
                                                 <span className="font-semibold text-gray-800">Target:</span> 80% response rate
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-emerald-100 rounded-xl p-2">
-                                            <div className="text-emerald-600 text-xl">👥</div>
+                                <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8 shadow-lg border border-gray-100">
+                                    <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                                        <div className="bg-emerald-100 rounded-lg md:rounded-xl p-2">
+                                            <div className="text-emerald-600 text-lg md:text-xl">👥</div>
                                         </div>
-                                        <h4 className="font-bold text-gray-800 text-xl">Community Engagement</h4>
+                                        <h4 className="font-bold text-gray-800 text-lg md:text-xl">Community Engagement</h4>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
+                                    <div className="space-y-3 md:space-y-4">
+                                        <div className="flex items-center justify-between p-3 md:p-4 bg-blue-50 rounded-lg md:rounded-xl">
                                             <span className="text-sm text-gray-700 font-medium">Active Petitions</span>
-                                            <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold">{reportsData.pendingCount}</span>
+                                            <span className="bg-blue-500 text-white px-3 py-1 md:px-4 md:py-2 rounded-full text-xs font-bold">{reportsData.pendingCount}</span>
                                         </div>
-                                        <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl">
+                                        <div className="flex items-center justify-between p-3 md:p-4 bg-emerald-50 rounded-lg md:rounded-xl">
                                             <span className="text-sm text-gray-700 font-medium">Resolved Issues</span>
-                                            <span className="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold">{reportsData.respondedCount}</span>
+                                            <span className="bg-emerald-500 text-white px-3 py-1 md:px-4 md:py-2 rounded-full text-xs font-bold">{reportsData.respondedCount}</span>
                                         </div>
-                                        <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl">
+                                        <div className="flex items-center justify-between p-3 md:p-4 bg-purple-50 rounded-lg md:rounded-xl">
                                             <span className="text-sm text-gray-700 font-medium">Avg. Response Time</span>
-                                            <span className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-bold">{reportsData.averageResponseTimeDays || 'N/A'} days</span>
+                                            <span className="bg-purple-500 text-white px-3 py-1 md:px-4 md:py-2 rounded-full text-xs font-bold">{reportsData.averageResponseTimeDays || 'N/A'} days</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 );
-                case 'settings':
-                    return <OfficialSettings />;
+            case 'settings':
+                return <OfficialSettings />;
 
             default: return <div>Select a tab</div>;
         }
@@ -851,16 +883,45 @@ const OfficialDashboard = () => {
 
     return (
         <>
-        <ToastModal
-            show={toast.show}
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast({ ...toast, show: false })}
-        />
-            <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 flex">
-                <div className="w-80 bg-gradient-to-b from-green-300 to-green-400 p-6 shadow-xl flex flex-col sticky top-0 h-screen">
-                    <div className="flex items-center mb-8 text-green-800"><div className="text-3xl mr-3">🏛️</div><div className="text-2xl font-bold">CIVIX</div></div>
-                    <div className="bg-white bg-opacity-30 rounded-xl p-5 mb-8"><div className="bg-green-800 text-white px-3 py-1 rounded-full text-xs font-bold mb-2 inline-block">VERIFIED OFFICIAL</div><div className="text-lg font-bold text-green-800 mb-1">{userInfo.fullName}</div><div className="text-green-700 text-sm mb-2">{userInfo.email}</div></div>
+            <ToastModal
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
+            
+            {/* Mobile Header */}
+            <MobileHeader 
+                userInfo={userInfo}
+                setShowMobileNav={setShowMobileNav}
+                activeTab={activeTab}
+                firstName={firstName}
+            />
+
+            {/* Mobile Navigation */}
+            {showMobileNav && (
+                <MobileNav
+                    activeTab={activeTab}
+                    handleNavClick={handleNavClick}
+                    navigationItems={navigationItems}
+                    userInfo={userInfo}
+                    handleSignOutClick={handleSignOutClick}
+                    setShowMobileNav={setShowMobileNav}
+                />
+            )}
+
+            <div className="min-h-screen bg-gradient-to-br from-green-100 to-green-50 flex flex-col lg:flex-row">
+                {/* Desktop Sidebar - Hidden on mobile */}
+                <div className="hidden lg:flex lg:w-80 bg-gradient-to-b from-green-300 to-green-400 p-6 shadow-xl flex-col sticky top-0 h-screen">
+                    <div className="flex items-center mb-8 text-green-800">
+                        <div className="text-3xl mr-3">🏛️</div>
+                        <div className="text-2xl font-bold">CIVIX</div>
+                    </div>
+                    <div className="bg-white bg-opacity-30 rounded-xl p-5 mb-8">
+                        <div className="bg-green-800 text-white px-3 py-1 rounded-full text-xs font-bold mb-2 inline-block">VERIFIED OFFICIAL</div>
+                        <div className="text-lg font-bold text-green-800 mb-1">{userInfo.fullName}</div>
+                        <div className="text-green-700 text-sm mb-2">{userInfo.email}</div>
+                    </div>
                     <nav className="flex-1">
                         {navigationItems.map((item) => (
                             <div key={item.id} className={`flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40 ${activeTab === item.id ? 'bg-white bg-opacity-50' : ''}`} onClick={() => handleNavClick(item.id)}>
@@ -870,35 +931,90 @@ const OfficialDashboard = () => {
                             </div>
                         ))}
                     </nav>
-                    <div className="mt-8 pt-5 sticky bottom-0 border-t border-white border-opacity-30"><div className="flex items-center p-2 m-1 rounded-lg cursor-pointer text-black-400 font-medium hover:bg-white hover:bg-opacity-40" onClick={handleSignOutClick}><span className="mr-3 text-lg">🚪</span> Sign Out</div></div>
+                    <div className="mt-8 pt-5 sticky bottom-0 border-t border-white border-opacity-30">
+                        <div className="flex items-center p-2 m-1 rounded-lg cursor-pointer text-black-400 font-medium hover:bg-white hover:bg-opacity-40" onClick={handleSignOutClick}>
+                            <span className="mr-3 text-lg">🚪</span> Sign Out
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex-1 p-8 overflow-y-auto">
-<h1 className="text-3xl font-bold mb-6 text-green-800">
-  {activeTab === 'dashboard' 
-    ? `Welcome back, ${firstName}!` 
-    : activeTab === 'settings' 
-      ? '' 
-      : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
-  }
-</h1>
+                {/* Main Content */}
+                <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6 text-green-800">
+                        {activeTab === 'dashboard' 
+                            ? `Welcome back, ${firstName}!` 
+                            : activeTab === 'settings' 
+                            ? '' 
+                            : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                        }
+                    </h1>
                     {renderTabContent()}
                 </div>
             </div>
 
-
-     
             {/* --- Modals --- */}
-            {showSignOutModal && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"> <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"> <div className="text-center"> <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"><span className="text-2xl">🚪</span></div> <h3 className="text-lg font-bold text-gray-900 mb-2">Sign Out</h3> <p className="text-sm text-gray-500 mb-6">Are you sure you want to sign out?</p> </div> <div className="flex gap-3"> <button onClick={cancelSignOut} className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200">Cancel</button> <button onClick={confirmSignOut} className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700">Sign Out</button> </div> </div> </div> )}
-            {showResponseModal && selectedPetition && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"> <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"> <div className="flex justify-between items-center mb-4"> <h3 className="text-xl font-bold text-green-800">Respond to Petition</h3> <button onClick={closeResponseModal} className="text-gray-500 hover:text-gray-700 text-2xl">×</button> </div> <div className="bg-gray-50 rounded-lg p-4 mb-6"> <h4 className="font-semibold text-green-800 mb-2">{selectedPetition.title}</h4> <p className="text-gray-600 text-sm mb-2">Submitted by: {selectedPetition.creator?.fullName}</p> <p className="text-gray-700">{selectedPetition.description}</p> </div> <div> <div className="mb-4"> <label className="block text-sm font-medium text-gray-700 mb-2">Response Status</label> <select name="responseStatus" value={responseForm.responseStatus} onChange={handleFormChange} className="w-full p-3 border border-gray-300 rounded-lg"> <option value="under-consideration">Under Consideration</option> <option value="approved">Approved</option> <option value="rejected">Rejected</option> </select> </div> <div className="mb-4"> <label className="block text-sm font-medium text-gray-700 mb-2">Response Message *</label> <textarea name="message" value={responseForm.message} onChange={handleFormChange} rows={5} placeholder="Provide a detailed response..." className="w-full p-3 border border-gray-300 rounded-lg" /> </div> <div className="flex gap-3"> <button type="button" onClick={submitResponse} disabled={isSubmitting} className="flex-1 bg-green-800 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-400"> {isSubmitting ? 'Submitting...' : 'Submit Response'} </button> <button type="button" onClick={closeResponseModal} className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600">Cancel</button> </div> </div> </div> </div> )}
+            {showSignOutModal && ( 
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 max-w-md w-full mx-4">
+                        <div className="text-center">
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                                <span className="text-2xl">🚪</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Sign Out</h3>
+                            <p className="text-sm text-gray-500 mb-6">Are you sure you want to sign out?</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button onClick={cancelSignOut} className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200">Cancel</button>
+                            <button onClick={confirmSignOut} className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700">Sign Out</button>
+                        </div>
+                    </div>
+                </div> 
+            )}
+            
+            {showResponseModal && selectedPetition && ( 
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg md:text-xl font-bold text-green-800">Respond to Petition</h3>
+                            <button onClick={closeResponseModal} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h4 className="font-semibold text-green-800 mb-2">{selectedPetition.title}</h4>
+                            <p className="text-gray-600 text-sm mb-2">Submitted by: {selectedPetition.creator?.fullName}</p>
+                            <p className="text-gray-700">{selectedPetition.description}</p>
+                        </div>
+                        <div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Response Status</label>
+                                <select name="responseStatus" value={responseForm.responseStatus} onChange={handleFormChange} className="w-full p-3 border border-gray-300 rounded-lg">
+                                    <option value="under-consideration">Under Consideration</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Response Message *</label>
+                                <textarea name="message" value={responseForm.message} onChange={handleFormChange} rows={5} placeholder="Provide a detailed response..." className="w-full p-3 border border-gray-300 rounded-lg" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button type="button" onClick={submitResponse} disabled={isSubmitting} className="flex-1 bg-green-800 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-400">
+                                    {isSubmitting ? 'Submitting...' : 'Submit Response'}
+                                </button>
+                                <button type="button" onClick={closeResponseModal} className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            )}
+            
             {showPollModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center p-6 border-b">
-                            <h2 className="text-xl font-semibold text-gray-800">{editingPoll ? 'Update Poll' : 'Create a New Poll'}</h2>
+                        <div className="flex justify-between items-center p-4 md:p-6 border-b">
+                            <h2 className="text-lg md:text-xl font-semibold text-gray-800">{editingPoll ? 'Update Poll' : 'Create a New Poll'}</h2>
                             <button onClick={() => setShowPollModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                         </div>
-                        <div className="p-6 space-y-4">
+                        <div className="p-4 md:p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Poll Question</label>
                                 <input type="text" value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="What do you want to ask?" className="w-full p-2 border rounded-md"/>
@@ -925,9 +1041,9 @@ const OfficialDashboard = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Closes On</label>
                                 <input type="date" value={closesOn} onChange={(e) => setClosesOn(e.target.value)} className="w-full p-2 border rounded-md"/>
                             </div>
-                            <div className="flex gap-3 justify-end pt-4">
-                                <button onClick={() => setShowPollModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
-                                <button onClick={handleSubmitPoll} disabled={isPollSubmitting} className="px-6 py-2 bg-green-800 text-white rounded-md disabled:bg-green-400 hover:bg-green-700">
+                            <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4">
+                                <button onClick={() => setShowPollModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 w-full sm:w-auto">Cancel</button>
+                                <button onClick={handleSubmitPoll} disabled={isPollSubmitting} className="px-6 py-2 bg-green-800 text-white rounded-md disabled:bg-green-400 hover:bg-green-700 w-full sm:w-auto">
                                     {isPollSubmitting ? 'Saving...' : editingPoll ? 'Update Poll' : 'Create Poll'}
                                 </button>
                             </div>
@@ -935,9 +1051,10 @@ const OfficialDashboard = () => {
                     </div>
                 </div>
             )}
+            
             {closePollId && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 max-w-md w-full mx-4">
                         <div className="text-center">
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                                 <span className="text-2xl">🛑</span>
@@ -945,14 +1062,56 @@ const OfficialDashboard = () => {
                             <h3 className="text-lg font-bold text-gray-900 mb-2">Close Poll</h3>
                             <p className="text-sm text-gray-500 mb-6">Are you sure you want to close this poll?</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button onClick={cancelClosePoll} className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200">Cancel</button>
                             <button onClick={confirmClosePoll} className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700">Close Poll</button>
                         </div>
                     </div>
                 </div>
             )}
-            {showResultsModal && selectedPollResults && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"> <div className="bg-white rounded-2xl p-6 max-w-lg w-full"> <div className="flex justify-between items-center mb-4"> <h3 className="text-xl font-bold text-green-800">Poll Results</h3> <button onClick={() => setShowResultsModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button> </div> <div className="mb-4"> <div className="font-semibold text-gray-900 text-lg mb-2">{selectedPollResults.title}</div> <div className="text-sm text-gray-500 mb-4"> Created: {new Date(selectedPollResults.createdAt).toLocaleDateString()} </div> <div className="space-y-3"> {(() => { const mockTotalVotes = 50; const mockOptions = [ { text: "Option A", votes: 20 }, { text: "Option B", votes: 30 }, ]; return Array.isArray(mockOptions) && mockOptions.map((opt, i) => { const percent = mockTotalVotes > 0 ? Math.round(((opt.votes || 0) / mockTotalVotes) * 100) : 0; return ( <div key={i}> <div className="flex justify-between items-center mb-1"> <span className="text-sm font-medium text-gray-700">{opt.text}</span> <span className="text-sm font-bold text-green-800"> {opt.votes} votes ({percent}%) </span> </div> <div className="w-full bg-gray-200 rounded-full h-4"> <div className="bg-green-500 h-4 rounded-full text-xs text-white flex items-center justify-center transition-all duration-500" style={{ width: `${percent}%` }} > {percent > 10 && `${percent}%`} </div> </div> </div> ); }); })()} </div> </div> <div className="flex justify-end mt-6"> <button onClick={() => setShowResultsModal(false)} className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700"> Close </button> </div> </div> </div> )}
+            
+            {showResultsModal && selectedPollResults && ( 
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 max-w-lg w-full">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg md:text-xl font-bold text-green-800">Poll Results</h3>
+                            <button onClick={() => setShowResultsModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                        </div>
+                        <div className="mb-4">
+                            <div className="font-semibold text-gray-900 text-base md:text-lg mb-2">{selectedPollResults.title}</div>
+                            <div className="text-sm text-gray-500 mb-4"> Created: {new Date(selectedPollResults.createdAt).toLocaleDateString()} </div>
+                            <div className="space-y-3">
+                                {(() => {
+                                    const mockTotalVotes = 50;
+                                    const mockOptions = [
+                                        { text: "Option A", votes: 20 },
+                                        { text: "Option B", votes: 30 },
+                                    ];
+                                    return Array.isArray(mockOptions) && mockOptions.map((opt, i) => {
+                                        const percent = mockTotalVotes > 0 ? Math.round(((opt.votes || 0) / mockTotalVotes) * 100) : 0;
+                                        return (
+                                            <div key={i}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-sm font-medium text-gray-700">{opt.text}</span>
+                                                    <span className="text-sm font-bold text-green-800"> {opt.votes} votes ({percent}%) </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-4">
+                                                    <div className="bg-green-500 h-4 rounded-full text-xs text-white flex items-center justify-center transition-all duration-500" style={{ width: `${percent}%` }} >
+                                                        {percent > 10 && `${percent}%`}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+                        <div className="flex justify-end mt-6">
+                            <button onClick={() => setShowResultsModal(false)} className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700 w-full sm:w-auto"> Close </button>
+                        </div>
+                    </div>
+                </div> 
+            )}
         </>
     );
 };
