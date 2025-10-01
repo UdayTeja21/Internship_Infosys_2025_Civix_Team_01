@@ -1,326 +1,63 @@
-// // // // File: routes/dashboard.js
-
-// // // import express from 'express';
-// // // import Petition from '../models/Petition.js';
-
-// // // const router = express.Router();
-
-// // // // Get dashboard stats
-// // // router.get('/stats', async (req, res) => {
-// // //   try {
-// // //     console.log('User object on request:', req.user);
-// // //     const userId = req.user._id;
-// // //     const [myPetitions, signedPetitions, activePetitions] = await Promise.all([
-// // //       Petition.countDocuments({ creator: userId }),
-// // //       Petition.countDocuments({ "signatures.user": userId, creator: { $ne: userId } }),
-// // //       Petition.countDocuments({ status: "active" })
-// // //     ]);
-// // //     res.json({ myPetitions, signedPetitions, activePetitions });
-// // //   } catch (err) {
-// // //     console.error('Error fetching dashboard stats:', err);
-// // //     res.status(500).json({ error: err.message });
-// // //   }
-// // // });
-
-// // // export default router;
-
-
-
-
-// // // File: routes/dashboard.js
-
-// // import express from 'express';
-// // import authMiddleware from '../middleware/authMiddleware.js';
-// // import Petition from '../models/Petition.js';
-// // import Poll from '../models/Poll.js';
-
-// // const router = express.Router();
-
-// // // This middleware will protect all routes in this file
-// // router.use(authMiddleware);
-
-// // // GET /api/dashboard/summary
-// // router.get('/summary', async (req, res) => {
-// //   try {
-// //     const petitions = await Petition.countDocuments();
-// //     const polls = await Poll.countDocuments({ createdBy: req.user.id });
-    
-// //     // Example logic for response rate
-// //     const totalPetitions = await Petition.countDocuments();
-// //     const respondedPetitions = await Petition.countDocuments({ 
-// //       status: { $in: ['responded', 'approved', 'rejected'] } 
-// //     });
-// //     const responseRate = totalPetitions > 0 
-// //       ? `${Math.round((respondedPetitions / totalPetitions) * 100)}%` 
-// //       : '0%';
-
-// //     res.json({
-// //       petitions: petitions,
-// //       polls: polls,
-// //       responseRate: responseRate,
-// //       satisfaction: 92, // Placeholder value
-// //     });
-// //   } catch (err) {
-// //     res.status(500).json({ error: 'Server Error fetching summary' });
-// //   }
-// // });
-
-// // // GET /api/dashboard/engagement
-// // router.get('/engagement', async (req, res) => {
-// //     try {
-// //         // Placeholder data - you can build more complex logic here later
-// //         res.json({
-// //             totalInteractions: 580,
-// //             satisfactionRate: '92%',
-// //             avgResponseTime: 7,
-// //         });
-// //     } catch (err) {
-// //         res.status(500).json({ error: 'Server Error fetching engagement' });
-// //     }
-// // });
-
-// // // GET /api/dashboard/notifications
-// // router.get('/notifications', async (req, res) => {
-// //     try {
-// //         // Placeholder data
-// //         res.json([
-// //             { id: 1, message: 'A new petition "Improve Park Lighting" requires attention.' },
-// //             { id: 2, message: 'Poll "New Community Center Location" has ended.' }
-// //         ]);
-// //     } catch (err) {
-// //         res.status(500).json({ error: 'Server Error fetching notifications' });
-// //     }
-// // });
-
-
-
-
-// // // ✅ ADD THIS NEW ENDPOINT FOR CIVIC ENGAGEMENT REPORTS
-// // router.get('/reports', async (req, res) => {
-// //   try {
-// //     // For now, we'll get all petitions. You can filter by locality later
-// //     // e.g., Petition.find({ location: req.user.locality })
-// //     const allPetitions = await Petition.find({});
-
-// //     const totalPetitions = allPetitions.length;
-    
-// //     // Calculate petitions by status
-// //     const petitionsByStatus = allPetitions.reduce((acc, petition) => {
-// //       const status = petition.status || 'pending';
-// //       acc[status] = (acc[status] || 0) + 1;
-// //       return acc;
-// //     }, {});
-
-// //     // Calculate average response time for petitions that have been responded to
-// //     const respondedPetitions = allPetitions.filter(p => 
-// //         p.status !== 'pending' && p.status !== 'active' && p.officialResponse
-// //     );
-
-// //     let averageResponseTimeDays = 0;
-// //     if (respondedPetitions.length > 0) {
-// //       const totalResponseTime = respondedPetitions.reduce((sum, p) => {
-// //         // Assuming officialResponse has a `respondedAt` field. 
-// //         // If not, we'll use the petition's `updatedAt`.
-// //         const responseDate = p.officialResponse.respondedAt || p.updatedAt;
-// //         const createdDate = p.createdAt;
-// //         const diffTime = Math.abs(responseDate - createdDate);
-// //         return sum + diffTime;
-// //       }, 0);
-// //       const avgTimeMillis = totalResponseTime / respondedPetitions.length;
-// //       averageResponseTimeDays = Math.round(avgTimeMillis / (1000 * 60 * 60 * 24));
-// //     }
-
-// //     res.json({
-// //       totalPetitions,
-// //       respondedCount: respondedPetitions.length,
-// //       pendingCount: totalPetitions - respondedPetitions.length,
-// //       petitionsByStatus,
-// //       averageResponseTimeDays,
-// //       // We can add more detailed trend data here later
-// //       trends: [], 
-// //       // This is the raw data for exporting
-// //       reportData: allPetitions.map(p => ({
-// //         id: p._id,
-// //         title: p.title,
-// //         status: p.status,
-// //         submittedDate: p.createdAt.toISOString().split('T')[0],
-// //         signatures: p.signatures.length,
-// //         response: p.officialResponse?.message || 'N/A'
-// //       }))
-// //     });
-
-// //   } catch (err) {
-// //     console.error('Error fetching report data:', err);
-// //     res.status(500).json({ error: 'Server error while generating report' });
-// //   }
-// // });
-
-// // export default router;
-
-
-
-
-// import express from 'express';
-// import authMiddleware from '../middleware/authMiddleware.js';
-// import Petition from '../models/Petition.js';
-// import Poll from '../models/Poll.js';
-
-// const router = express.Router();
-
-// // This middleware will protect all routes in this file
-// router.use(authMiddleware);
-
-// // GET /api/dashboard/summary
-// router.get('/summary', async (req, res) => {
-//   try {
-//     const petitions = await Petition.countDocuments();
-//     const polls = await Poll.countDocuments({ createdBy: req.user.id });
-    
-//     const totalPetitions = await Petition.countDocuments();
-//     const respondedPetitions = await Petition.countDocuments({ 
-//       status: { $in: ['responded', 'approved', 'rejected'] } 
-//     });
-//     const responseRate = totalPetitions > 0 
-//       ? `${Math.round((respondedPetitions / totalPetitions) * 100)}%` 
-//       : '0%';
-
-//     res.json({
-//       petitions: petitions,
-//       polls: polls,
-//       responseRate: responseRate,
-//       satisfaction: 92, // Placeholder value
-//     });
-//   } catch (err) {
-//     res.status(500).json({ error: 'Server Error fetching summary' });
-//   }
-// });
-
-// // GET /api/dashboard/engagement
-// router.get('/engagement', async (req, res) => {
-//     try {
-//         // Placeholder data
-//         res.json({
-//             totalInteractions: 580,
-//             satisfactionRate: '92%',
-//             avgResponseTime: 7,
-//         });
-//     } catch (err) {
-//         res.status(500).json({ error: 'Server Error fetching engagement' });
-//     }
-// });
-
-// // GET /api/dashboard/notifications
-// router.get('/notifications', async (req, res) => {
-//     try {
-//         // Placeholder data
-//         res.json([
-//             { id: 1, message: 'A new petition "Improve Park Lighting" requires attention.' },
-//             { id: 2, message: 'Poll "New Community Center Location" has ended.' }
-//         ]);
-//     } catch (err) {
-//         res.status(500).json({ error: 'Server Error fetching notifications' });
-//     }
-// });
-
-// // GET /api/dashboard/stats - Fetches stats for the logged-in citizen
-// router.get('/stats', authMiddleware, async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-
-//     // Count petitions created by the user
-//     const myPetitionsCount = await Petition.countDocuments({ creator: userId });
-
-//     // Count petitions signed by the user
-//     const signedPetitionsCount = await Petition.countDocuments({ 'signatures.signedBy': userId });
-
-//     // Count all active petitions (example of a general stat)
-//     const activePetitionsCount = await Petition.countDocuments({ status: 'active' });
-
-//     res.json({
-//       myPetitions: myPetitionsCount,
-//       signedPetitions: signedPetitionsCount,
-//       activePetitions: activePetitionsCount,
-//     });
-
-//   } catch (err) {
-//     console.error("Error fetching dashboard stats:", err);
-//     res.status(500).json({ error: 'Server error while fetching dashboard stats' });
-//   }
-// });
-
-
-// // ✅ ADDED: THE MISSING REPORTS ENDPOINT
-// router.get('/reports', async (req, res) => {
-//   try {
-//     const allPetitions = await Petition.find({}).populate('creator', 'fullName');
-
-//     const totalPetitions = allPetitions.length;
-    
-//     const petitionsByStatus = allPetitions.reduce((acc, petition) => {
-//       const status = petition.status || 'pending';
-//       acc[status] = (acc[status] || 0) + 1;
-//       return acc;
-//     }, {});
-
-//     const respondedPetitions = allPetitions.filter(p => 
-//         p.officialResponse && ['responded', 'approved', 'rejected'].includes(p.status)
-//     );
-//     const respondedCount = respondedPetitions.length;
-//     const pendingCount = totalPetitions - respondedCount;
-
-//     let averageResponseTimeDays = 0;
-//     if (respondedCount > 0) {
-//       const totalResponseTime = respondedPetitions.reduce((sum, p) => {
-//         const responseDate = p.updatedAt;
-//         const createdDate = p.createdAt;
-//         return sum + Math.abs(responseDate - createdDate);
-//       }, 0);
-//       const avgTimeMillis = totalResponseTime / respondedCount;
-//       averageResponseTimeDays = Math.round(avgTimeMillis / (1000 * 60 * 60 * 24));
-//     }
-
-//     const reportData = allPetitions.map(p => ({
-//       id: p._id,
-//       title: p.title,
-//       status: p.status,
-//       submittedDate: p.createdAt.toISOString().split('T')[0],
-//       signatures: p.signatures?.length || 0,
-//       response: p.officialResponse?.message || 'N/A'
-//     }));
-
-//     res.json({
-//       totalPetitions,
-//       respondedCount,
-//       pendingCount,
-//       petitionsByStatus,
-//       averageResponseTimeDays,
-//       reportData
-//     });
-
-//   } catch (err) {
-//     console.error('Error fetching report data:', err);
-//     res.status(500).json({ error: 'Server error while generating report' });
-//   }
-// });
-
-// export default router;
-
-
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';
 import Petition from '../models/Petition.js';
 import Poll from '../models/Poll.js';
+import User from '../models/User.js'; // Ensure User model is imported
 
 const router = express.Router();
 
-// This middleware will protect all routes in this file
 router.use(authMiddleware);
+
+// --- HELPER FUNCTION TO CALCULATE PARTICIPATION RATE ---
+const getCivicParticipationRate = async () => {
+  try {
+    // 1. Get the total number of registered users
+    const totalUserCount = await User.countDocuments();
+    if (totalUserCount === 0) {
+      return '0%';
+    }
+
+    // 2. Define the time window (Last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // 3. Find unique users who recently signed petitions using aggregation
+    const usersFromPetitions = await Petition.aggregate([
+        { $unwind: "$signatures" },
+        { $match: { "signatures.signedAt": { $gte: thirtyDaysAgo } } },
+        { $group: { _id: "$signatures.user" } }
+    ]);
+
+    // 4. Find unique users who recently voted in polls using aggregation
+    const usersFromPolls = await Poll.aggregate([
+        { $unwind: "$voters" },
+        { $match: { "voters.votedAt": { $gte: thirtyDaysAgo } } },
+        { $group: { _id: "$voters.userId" } }
+    ]);
+
+    // 5. Combine and count unique participating users
+    const participatingUserIds = new Set([
+        ...usersFromPetitions.map(item => item._id.toString()),
+        ...usersFromPolls.map(item => item._id.toString())
+    ]);
+    
+    const uniqueParticipants = participatingUserIds.size;
+
+    // 6. Calculate the rate
+    const participationRate = (uniqueParticipants / totalUserCount) * 100;
+    return `${Math.round(participationRate)}%`;
+
+  } catch (error) {
+    console.error("Error calculating civic participation rate:", error);
+    return '0%'; // Return a default value on error
+  }
+};
 
 // GET /api/dashboard/summary
 router.get('/summary', async (req, res) => {
   try {
     const petitions = await Petition.countDocuments();
-    const polls = await Poll.countDocuments({ createdBy: req.user.id });
+    const polls = await Poll.countDocuments({ isOfficial: true });
     
     const totalPetitions = await Petition.countDocuments();
     const respondedPetitions = await Petition.countDocuments({ 
@@ -329,59 +66,41 @@ router.get('/summary', async (req, res) => {
     const responseRate = totalPetitions > 0 
       ? `${Math.round((respondedPetitions / totalPetitions) * 100)}%` 
       : '0%';
+    
+    const civicParticipationRate = await getCivicParticipationRate();
 
     res.json({
-      petitions: petitions,
-      polls: polls,
-      responseRate: responseRate,
-      satisfaction: 92, // Placeholder value
+      petitions,
+      polls,
+      responseRate,
+      civicParticipationRate,
     });
   } catch (err) {
+    console.error("Error fetching dashboard summary:", err);
     res.status(500).json({ error: 'Server Error fetching summary' });
   }
 });
 
-// *** THIS IS THE UPDATED SECTION ***
 // GET /api/dashboard/engagement
 router.get('/engagement', async (req, res) => {
     try {
-        // 1. Define the Time Window (Last 7 Days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        // 2. Find unique users from recent Petition Signatures
-        const usersFromPetitions = await Petition.aggregate([
-            { $unwind: "$signatures" },
-            { $match: { "signatures.signedAt": { $gte: sevenDaysAgo } } },
-            { $group: { _id: "$signatures.user" } }
-        ]);
-        const petitionUserIds = usersFromPetitions.map(item => item._id.toString());
+        const usersFromPetitions = await Petition.distinct("signatures.user", { "signatures.signedAt": { $gte: sevenDaysAgo } });
+        const usersFromPolls = await Poll.distinct("voters.userId", { "voters.votedAt": { $gte: sevenDaysAgo } });
 
-        // 3. Find unique users from recent Poll Votes
-        // (This assumes your Poll schema has a 'voters' array like: [{ userId: ObjectId, votedAt: Date }])
-        const usersFromPolls = await Poll.aggregate([
-            { $unwind: "$voters" },
-            { $match: { "voters.votedAt": { $gte: sevenDaysAgo } } },
-            { $group: { _id: "$voters.userId" } }
-        ]);
-        const pollUserIds = usersFromPolls.map(item => item._id.toString());
-
-        // 4. Combine and count unique users
-        const allUserIds = [...petitionUserIds, ...pollUserIds];
+        const allUserIds = [...usersFromPetitions.map(id => id.toString()), ...usersFromPolls.map(id => id.toString())];
         const uniqueActiveUsers = new Set(allUserIds);
         const activeUserCount = uniqueActiveUsers.size;
 
-        // --- Other metrics can be calculated here ---
-        const satisfactionRate = '92%'; // Placeholder - Replace with your real calculation
-        const avgResponseTime = 7;      // Placeholder - Replace with your real calculation
+        const civicParticipationRate = await getCivicParticipationRate();
+        const avgResponseTime = 7; // Placeholder
 
-         console.log("Calculated Active Users:", activeUserCount);
-
-        // 5. Send the Final JSON Response with the correct field name
         res.json({
             activeUsers: activeUserCount,
-            satisfactionRate: satisfactionRate,
-            avgResponseTime: avgResponseTime,
+            civicParticipationRate,
+            avgResponseTime,
         });
     } catch (err) {
         console.error("Error fetching dashboard engagement data:", err);
@@ -389,16 +108,15 @@ router.get('/engagement', async (req, res) => {
     }
 });
 
-
 // GET /api/dashboard/notifications
 router.get('/notifications', async (req, res) => {
     try {
-        // Placeholder data
         res.json([
             { id: 1, message: 'A new petition "Improve Park Lighting" requires attention.' },
             { id: 2, message: 'Poll "New Community Center Location" has ended.' }
         ]);
     } catch (err) {
+        console.error("Error fetching notifications:", err);
         res.status(500).json({ error: 'Server Error fetching notifications' });
     }
 });
@@ -422,7 +140,6 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 });
 
-
 // GET /api/dashboard/reports
 router.get('/reports', async (req, res) => {
   try {
@@ -444,7 +161,7 @@ router.get('/reports', async (req, res) => {
     let averageResponseTimeDays = 0;
     if (respondedCount > 0) {
       const totalResponseTime = respondedPetitions.reduce((sum, p) => {
-        const responseDate = p.updatedAt;
+        const responseDate = p.respondedAt || p.updatedAt;
         const createdDate = p.createdAt;
         return sum + Math.abs(responseDate - createdDate);
       }, 0);
@@ -476,4 +193,3 @@ router.get('/reports', async (req, res) => {
 });
 
 export default router;
-
