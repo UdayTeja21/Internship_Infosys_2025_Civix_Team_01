@@ -752,6 +752,7 @@ interface Poll {
   hasVoted: boolean;
   location: string;
   isMyPoll: boolean;
+  isOfficial?: boolean;
   createdBy?: {
     fullName: string;
     role: string;};
@@ -810,7 +811,6 @@ const Polls: React.FC = () => {
   const [closesOn, setClosesOn] = useState('');
   const [toast, setToast] = useState<{ show: boolean; message: string; type?: "success" | "error" }>({ show: false, message: "", type: "success" });
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
-  const [toastMessage, setToastMessage] = useState('');
   const tabs = ['Active Polls', 'Polls I Voted On', 'My Polls'];/* new */
 
 
@@ -818,7 +818,7 @@ const Polls: React.FC = () => {
   const currentUserId = localStorage.getItem("userId");
   axios.get("http://localhost:5000/api/polls")
     .then(async res => {
-      let polls = res.data.map((poll: any) => ({
+        let polls = res.data.map((poll: any) => ({
         id: poll._id,
         question: poll.title,
         description: poll.description,
@@ -828,12 +828,16 @@ const Polls: React.FC = () => {
         totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
         hasVoted: false,
         location: poll.targetLocation || '',
-        // ...existing code...
-isMyPoll:
-  (poll.createdBy && typeof poll.createdBy === "object" && String(poll.createdBy.id) === String(currentUserId)) ||
-  (typeof poll.createdBy === "string" && String(poll.createdBy) === String(currentUserId)),
-// ...existing code.../* new 4.18 25-09-25 */
-         createdBy: poll.createdBy // <-- ADD THIS LINE
+        // normalize creator id (works for populated object, mongoose id getter, or plain id string)
+        isMyPoll: String(
+          poll.createdBy && (typeof poll.createdBy === 'object'
+            ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
+            : poll.createdBy)
+        ) === String(currentUserId),
+        // ensure createdBy is an object so UI can safely access .role/.fullName when populated
+        createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
+        // backend may provide an explicit isOfficial flag; use it to render the badge when createdBy isn't populated
+        isOfficial: !!poll.isOfficial
       }));
        console.log("currentUserId:", currentUserId);
       console.log("polls:", polls.map((p: any) => ({
@@ -894,14 +898,13 @@ isMyPoll:
     location: poll.targetLocation || 'San Diego, CA',
    /*  isMyPoll: poll.createdBy === currentUserId */
    /* new 4:20 25-09-25  */
- // ...existing code...
-isMyPoll:
-  (poll.createdBy && typeof poll.createdBy === "object" && String(poll.createdBy.id) === String(currentUserId)) ||
-  (typeof poll.createdBy === "string" && String(poll.createdBy) === String(currentUserId)),
-// ...existing code... // <-- fix here
-  createdBy: poll.createdBy // now an object
-  /* new 25-09-25 4:21 */
-  
+    isMyPoll: String(
+      poll.createdBy && (typeof poll.createdBy === 'object'
+        ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
+        : poll.createdBy)
+    ) === String(currentUserId),
+    createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
+    isOfficial: !!poll.isOfficial
   }));
   if (currentUserId) {
     const votedRes = await axios.get(`http://localhost:5000/api/polls/voted?userId=${currentUserId}`);
@@ -919,13 +922,12 @@ isMyPoll:
  
     const userId = localStorage.getItem("userId");
   if (!userId) {
-    setToastMessage("You must be logged in to create a poll.");
-    setTimeout(() => setToastMessage(''), 2000);
+    setToast({ show: true, message: "You must be logged in to create a poll.", type: "error" });
     return;
   }
   /* new */
   if (!pollLocation.trim()) {
-    setToastMessage( "Location is required!");
+    setToast({ show: true, message: "Location is required!", type: "error" });
     return;
   }
   else {
@@ -980,8 +982,7 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
     const voteOnPoll = async (pollId: string, optionIndex: number) => {
   const userId = localStorage.getItem("userId");
   if (!userId) {
-    setToastMessage("You must be logged in to vote.");
-    setTimeout(() => setToastMessage(''), 2000);
+    setToast({ show: true, message: "You must be logged in to vote.", type: "error" });
     return;
   }
   try {
@@ -989,14 +990,12 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
       userId,
       selectedOption: optionIndex
     });
-    await fetchPolls(); // <-- This makes the UI update instantly!
-    setToastMessage("Vote submitted!");
-    setTimeout(() => setToastMessage(''), 2000);
+  await fetchPolls(); // <-- This makes the UI update instantly!
+  setToast({ show: true, message: "Vote submitted!", type: "success" });
     // Refetch polls or update local states
     // ...rest of your code...
   } catch (err: any) {
-    setToastMessage("Error voting: " + (err.response?.data?.error || err.message));
-    setTimeout(() => setToastMessage(''), 2000);
+    setToast({ show: true, message: "Error voting: " + (err.response?.data?.error || err.message), type: "error" });
   }
 };
   /* const getFilteredPolls = () => {
@@ -1411,7 +1410,7 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
 {/* new 23-09-25 3:54 */}
 <div className="flex items-center gap-2 mb-2">
   <h3 className="text-lg font-semibold text-gray-800">{poll.question}</h3>
-  {poll.createdBy?.role === "official" && (
+  {(poll.isOfficial || poll.createdBy?.role === "official") && (
     <span
       title="Official Poll"
       className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold ml-2"

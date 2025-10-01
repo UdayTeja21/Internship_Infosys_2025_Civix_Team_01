@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import API from '../api';
 import OfficialSettings from './OfficialSettings';
 
@@ -149,6 +149,18 @@ const OfficialDashboard = () => {
         }
     }, [navigate]);
 
+    // When user navigates with browser Back/Forward, show the sign-out modal instead of navigating away
+    const location = useLocation();
+    useEffect(() => {
+        const handlePopState = () => {
+            setShowSignOutModal(true);
+            // Keep user on the same page while modal is open
+            navigate(location.pathname, { replace: true });
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [navigate, location.pathname]);
+
     useEffect(() => {
         if (userInfo) {
             fetchPetitions();
@@ -264,7 +276,8 @@ const OfficialDashboard = () => {
             const pollData = {
                 title: pollQuestion,
                 description: pollDescription,
-                options: pollOptions.map(opt => ({ text: opt, votes: 0 })),
+                // send options as an array of strings to match backend expectation
+                options: pollOptions.map(opt => opt),
                 targetLocation: pollLocation,
                 createdBy: userInfo._id,
                 closeDate: closesOn,
@@ -288,7 +301,10 @@ const OfficialDashboard = () => {
                 setClosesOn('');
             }, 500);
         } catch (err) {
-            setToast({ show: true, message: "Error saving poll.", type: "error" });
+            // prefer server-provided message when available
+            const serverMessage = err?.response?.data?.error || err?.response?.data?.message;
+            console.error('Error saving poll:', err, serverMessage);
+            setToast({ show: true, message: serverMessage || "Error saving poll.", type: "error" });
         } finally {
             setIsPollSubmitting(false);
         }
@@ -870,7 +886,15 @@ const OfficialDashboard = () => {
                             </div>
                         ))}
                     </nav>
-                    <div className="mt-8 pt-5 sticky bottom-0 border-t border-white border-opacity-30"><div className="flex items-center p-2 m-1 rounded-lg cursor-pointer text-black-400 font-medium hover:bg-white hover:bg-opacity-40" onClick={handleSignOutClick}><span className="mr-3 text-lg">🚪</span> Sign Out</div></div>
+                    <div className="mt-8 sticky bottom-0 border-t border-white border-opacity-30">
+                        <div
+                            className={`flex items-center p-4 m-2 rounded-lg cursor-pointer transition-all duration-300 text-green-800 font-medium hover:bg-white hover:bg-opacity-40`}
+                            onClick={handleSignOutClick}
+                        >
+                            <span className="mr-3 text-lg">🚪</span>
+                            <span className="flex-1">Sign Out</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex-1 p-8 overflow-y-auto">

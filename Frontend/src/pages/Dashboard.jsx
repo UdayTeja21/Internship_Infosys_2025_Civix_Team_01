@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";/* new buddy 1 */
+
 import API from '../api'; // Make sure this path is correct
 
 const Dashboard = () => {
@@ -9,8 +11,11 @@ const Dashboard = () => {
     { id: 'education', label: 'Education', color: 'green' },
     { id: 'public-safety', label: 'Public Safety', color: 'red' },
     { id: 'transportation', label: 'Transportation', color: 'yellow' },
-  ];
-
+  ]
+  /* new buddy 2 */
+   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const navigate = useNavigate();;
+ /* new buddy 2 */
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [stats, setStats] = useState({ myPetitions: 0, successfulPetitions: 0 });
   const [allPetitions, setAllPetitions] = useState([]);
@@ -67,6 +72,23 @@ const Dashboard = () => {
     };
     fetchAndProcessData();
   }, []);
+  
+  /* new buddy 3 */
+   
+  useEffect(() => {
+    const handlePopState = (e) => {
+      setShowSignOutModal(true);
+      // Prevent navigation by pushing dashboard route again
+      navigate("/dashboard", { replace: true });
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [navigate]);
+
+    /* new buddy 3 */
 
   const getFilteredPetitions = () => {
     if (!allPetitions) return [];
@@ -80,6 +102,11 @@ const Dashboard = () => {
   };
   
   const displayedPetitions = getFilteredPetitions();
+   
+  const handleSignOut = () => {
+    API.clearAuth();
+    navigate("/login");
+  };
 
   const getButtonClass = (category) => {
     return selectedCategory === category.id
@@ -138,8 +165,34 @@ const Dashboard = () => {
             <p>No petitions found.</p>
           </div>
         )}
+        </div>
+
+        {/* Sign out confirmation modal (match Sidebar UI) */}
+        {showSignOutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px] flex flex-col items-center">
+              <span className="text-gray-800 mb-5 text-lg font-semibold">
+                Are you sure you want to sign out?
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSignOut}
+                  className="px-5 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  className="px-5 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
-    </div>
   );
 };
 
