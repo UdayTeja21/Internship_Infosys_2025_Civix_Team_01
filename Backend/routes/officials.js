@@ -12,15 +12,15 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     // --- STATS FOR CITIZEN ---
     if (user.role === 'citizen') {
-      const [officialCount, pendingPetitionsCount] = await Promise.all([
+      const [officialCount, activePetitionsCount] = await Promise.all([
         User.countDocuments({ role: 'official' }),
-        // ✅ Counts ALL petitions with 'pending' status, not just the user's
-        Petition.countDocuments({ status: 'pending' }) 
+        // ✅ FIX: Changed the query to count petitions with status 'active'
+        Petition.countDocuments({ status: 'active' }) 
       ]);
       
       return res.json({
         totalOfficials: officialCount,
-        pendingResponses: pendingPetitionsCount,
+        pendingResponses: activePetitionsCount,
       });
     }
 
@@ -31,19 +31,20 @@ router.get('/stats', authMiddleware, async (req, res) => {
       if (!user.location) {
         return res.json({
           totalOfficials,
-          petitionsAwaitingResponse: 0,
+          pendingResponses: 0,
           reason: 'Official location not set'
         });
       }
 
       const petitionsAwaitingResponseCount = await Petition.countDocuments({ 
-        location: new RegExp(`^${user.location}$`, 'i'),
-        status: 'pending' 
+        location: new RegExp(user.location, 'i'),
+        // ✅ FIX: Changed the query to count petitions with status 'active'
+        status: 'active'
       });
 
       return res.json({
         totalOfficials,
-        petitionsAwaitingResponse: petitionsAwaitingResponseCount,
+        pendingResponses: petitionsAwaitingResponseCount,
       });
     }
 
