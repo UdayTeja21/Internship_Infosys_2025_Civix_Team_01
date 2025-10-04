@@ -90,6 +90,15 @@ const Dashboard = () => {
 
     /* new buddy 3 */
 
+  useEffect(() => {
+  const token = localStorage.getItem('token');
+  const user = localStorage.getItem('user');
+  if (!token || !user) {
+    navigate("/login", { replace: true });
+  }
+}, [navigate]);
+// ...existing code...
+
   const getFilteredPetitions = () => {
     if (!allPetitions) return [];
     const filtered = selectedCategory === 'all'
@@ -105,9 +114,12 @@ const Dashboard = () => {
    
   const handleSignOut = () => {
     API.clearAuth();
-    navigate("/login");
-  };
-
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userRole');
+      navigate("/login", { replace: true }); // <-- replaces history entry
+};
   const getButtonClass = (category) => {
     return selectedCategory === category.id
       ? `px-3 py-1 bg-${category.color}-200 text-${category.color}-800 rounded-full text-sm border-2 border-${category.color}-300`
