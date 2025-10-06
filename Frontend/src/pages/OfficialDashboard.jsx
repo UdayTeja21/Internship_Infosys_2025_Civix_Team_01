@@ -1305,7 +1305,14 @@ const OfficialDashboard = () => {
     const fetchPolls = async () => {
         try {
             const response = await API.getAllPolls();
-            setPolls(response.data || []);
+            const raw = response.data || [];
+            // ensure createdAt exists (fallback to ObjectId timestamp) and sort newest first
+            const pollsWithDate = raw.map(p => ({
+                ...p,
+                createdAt: p.createdAt || (p._id ? new Date(parseInt(String(p._id).substring(0, 8), 16) * 1000).toISOString() : undefined)
+            }));
+            pollsWithDate.sort((a, b) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
+            setPolls(pollsWithDate);
         } catch (err) {
             console.error('Failed to fetch polls:', err);
             setPolls([]);
