@@ -1357,9 +1357,14 @@ const OfficialDashboard = () => {
     };
     const cancelSignOut = () => setShowSignOutModal(false);
     const respondToPetition = (petition) => {
+        // Prefill form when editing an existing response so officials can update their reply
         setSelectedPetition(petition);
         setShowResponseModal(true);
-        setResponseForm({ message: '', responseStatus: 'under-consideration' });
+        setResponseForm({
+            // try several possible fields that might hold an existing response
+            message: petition.response || petition.responseMessage || petition.responseText || '',
+            responseStatus: petition.status || 'under-consideration',
+        });
     };
     const closeResponseModal = () => {
         setShowResponseModal(false);
@@ -1367,20 +1372,26 @@ const OfficialDashboard = () => {
     };
     const handleFormChange = (e) => setResponseForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const submitResponse = async () => {
-        if (!selectedPetition || !responseForm.message.trim()) return alert('Please fill in the response message');
+        if (!selectedPetition || !responseForm.message.trim()) {
+            setToast({ show: true, message: "Please fill in the response message", type: "error" });
+            return;
+        }
         setIsSubmitting(true);
         try {
-            await API.respondToPetition(selectedPetition._id, {
+            // Upsert behavior: create or update an existing response
+            await API.respondToPetition(selectedPetition._1d || selectedPetition._id, {
                 ...responseForm,
                 respondedBy: userInfo?.fullName || 'Public Official'
             });
-            alert('Response submitted successfully!');
+
+            const alreadyResponded = Boolean(selectedPetition?.respondedAt || selectedPetition?.response || ['responded', 'approved', 'rejected'].includes(selectedPetition?.status));
+            setToast({ show: true, message: alreadyResponded ? "Response updated successfully!" : "Response submitted successfully!", type: "success" });
             closeResponseModal();
             fetchPetitions();
             fetchStats();
         } catch (error) {
             console.error('Error submitting response:', error);
-            alert('Failed to submit response. Please try again.');
+            setToast({ show: true, message: "Failed to submit response. Please try again.", type: "error" });
         } finally {
             setIsSubmitting(false);
         }
@@ -1673,7 +1684,7 @@ const OfficialDashboard = () => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-2 md:gap-3">
+                                            <div className="flex flex-col gap-2 md:gap-3 items-center">
                                                 <button
                                                     onClick={() => respondToPetition(p)}
                                                     disabled={isResponded}
@@ -1685,6 +1696,15 @@ const OfficialDashboard = () => {
                                                 >
                                                     {isResponded ? '✅ Responded' : '💬 Respond'}
                                                 </button>
+
+                                                {isResponded && (
+                                                    <button
+                                                        onClick={() => respondToPetition(p)}
+                                                        className="px-4 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold bg-gray-100 text-gray-400 cursor-pointer ml-2"
+                                                    >
+                                                        ✏️ Edit
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
