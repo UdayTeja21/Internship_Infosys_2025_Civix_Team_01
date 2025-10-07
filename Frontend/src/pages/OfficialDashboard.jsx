@@ -1829,6 +1829,38 @@ const OfficialDashboard = () => {
                     ],
                 };
                 
+                const exportPetitionsCsv = () => {
+                    if (!petitions || petitions.length === 0) {
+                        setToast({ show: true, message: 'No petitions to export', type: 'error' });
+                        return;
+                    }
+
+                    const escapeCsv = (val) => '"' + String(val ?? '').replace(/"/g, '""') + '"';
+
+                    const headers = ['ID', 'Title', 'Status', 'Submitted', 'Signatures', 'Official Response'];
+                    const rows = petitions.map(p => {
+                        const id = p._id || p.id || '';
+                        const title = p.title || '';
+                        const status = p.status || '';
+                        const submitted = p.createdAt ? new Date(p.createdAt).toLocaleString() : '';
+                        const signatures = (p.signatures && p.signatures.length) ? p.signatures.length : 0;
+                        const officialResponse = (p.officialResponse && p.officialResponse.message) ? p.officialResponse.message : 'N/A';
+                        return [id, title, status, submitted, signatures, officialResponse].map(escapeCsv).join(',');
+                    });
+
+                    const csvContent = [headers.map(escapeCsv).join(','), ...rows].join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `petitions_report_${new Date().toISOString().slice(0,10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    setToast({ show: true, message: 'Export started — check your downloads folder.', type: 'success' });
+                };
+
                 return (
                     <div className="space-y-10">
                         {/* Enhanced Header Section */}
@@ -1844,9 +1876,18 @@ const OfficialDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="text-center lg:text-right">
-                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-2xl p-6 min-w-[160px]">
+                                    <div className="bg-white bg-opacity-25 backdrop-blur-sm rounded-2xl p-6 w-64">
                                         <div className="text-4xl font-bold mb-1">{((reportsData.respondedCount / (reportsData.totalPetitions || 1)) * 100).toFixed(0)}%</div>
                                         <div className="text-sm text-green-700 font-semibold">Overall Response Rate</div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={exportPetitionsCsv}
+                                            disabled={!petitions || petitions.length === 0}
+                                            className={`px-4 py-3 rounded-2xl font-semibold text-sm transition w-64 ${(!petitions || petitions.length === 0) ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-green-800 text-white hover:bg-green-700 shadow'}`}
+                                        >
+                                            Export CSV
+                                        </button>
                                     </div>
                                 </div>
                             </div>
