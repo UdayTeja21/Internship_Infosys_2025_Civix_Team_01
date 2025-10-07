@@ -2,6 +2,8 @@
 import API from "../api";
 import { Edit, Plus, Trash2, X } from 'lucide-react'; // Added Edit and Trash2 icons
 import React, { useEffect, useState } from 'react';
+// @ts-ignore - LoadingContext is a .jsx module
+import { useLoading } from '../components/LoadingContext';
 
 // Interfaces and ToastModal component remain the same...
 interface Poll {
@@ -79,6 +81,7 @@ const Polls: React.FC = () => {
   const [closesOn, setClosesOn] = useState('');
   const [toast, setToast] = useState<{ show: boolean; message: string; type?: "success" | "error" }>({ show: false, message: "", type: "success" });
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const { showLoader, hideLoader } = useLoading();
   const tabs = ['Active Polls', 'Polls I Voted On', 'My Polls'];
 
 
@@ -152,6 +155,8 @@ const Polls: React.FC = () => {
     setPollOptions(newOptions);
   };
   const fetchPolls = async () => {
+  showLoader();
+  try {
   const currentUserId = localStorage.getItem("userId");
   const res = await API.getAllPolls();
   let polls = res.data.map((poll: any) => ({
@@ -184,6 +189,12 @@ const Polls: React.FC = () => {
     }));
   }
   setPolls(polls);
+  setPolls(polls);
+  } catch (err) {
+    console.error('Error in fetchPolls:', err);
+  } finally {
+    hideLoader();
+  }
 };
 
   const createPoll = async () => {
@@ -209,6 +220,7 @@ const Polls: React.FC = () => {
     };
 
     try {
+      showLoader();
       const res = await API.createPoll(pollData);
         await fetchPolls();
       setPolls([
@@ -236,6 +248,8 @@ setToast({ show: true, message: "Poll created successfully! 🎉", type: "succes
 
     } catch (err: any) {
 setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+    } finally {
+      hideLoader();
     }
   };
 
@@ -247,6 +261,7 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
     return;
   }
     try {
+    showLoader();
     await API.client.post(`/polls/${pollId}/vote`, {
       userId,
       selectedOption: optionIndex
@@ -255,6 +270,8 @@ setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.me
   setToast({ show: true, message: "Vote submitted!", type: "success" });
   } catch (err: any) {
     setToast({ show: true, message: "Error voting: " + (err.response?.data?.error || err.message), type: "error" });
+  } finally {
+    hideLoader();
   }
 };
     const getFilteredPolls = () => {
@@ -298,6 +315,7 @@ const handleUpdatePoll = async () => {
     closeDate: closesOn,
   };
   try {
+    showLoader();
   const res = await API.updatePoll(editingPoll.id, pollData);
     await fetchPolls();
   
@@ -323,6 +341,8 @@ const handleUpdatePoll = async () => {
 setToast({ show: true, message: "Poll updated successfully! ✨", type: "success" });
   } catch (err: any) {
 setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+  } finally {
+    hideLoader();
   }
 };
 const handleCloseModal = () => {
@@ -338,12 +358,15 @@ const handleCloseModal = () => {
 const handleDeletePoll = async (pollId: string) => {
   if (!window.confirm("Are you sure you want to delete this poll?")) return;
   try {
+    showLoader();
   await API.deletePoll(pollId);
     await fetchPolls();
     setPolls(polls.filter(p => p.id !== pollId));
 setToast({ show: true, message: "Poll deleted successfully! 🗑️", type: "success" });
   } catch (err: any) {
 setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+  } finally {
+    hideLoader();
   }
 };
 
