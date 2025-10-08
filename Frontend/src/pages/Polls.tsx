@@ -86,51 +86,10 @@ const Polls: React.FC = () => {
 
 
   useEffect(() => {
-  const currentUserId = localStorage.getItem("userId");
-  API.getAllPolls()
-    .then(async (res: any) => {
-        let polls = res.data.map((poll: any) => ({
-        id: poll._id,
-        question: poll.title,
-        description: poll.description,
-        options: poll.options.map((o: any) => o.text),
-        closesOn: poll.closeDate,
-        votes: poll.options.map((o: any) => o.votes),
-        totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
-        hasVoted: false,
-        location: poll.targetLocation || '',
-        // derive createdAt from explicit field or from MongoDB ObjectId timestamp
-        createdAt: poll.createdAt || (poll._id ? new Date(parseInt(String(poll._id).substring(0, 8), 16) * 1000).toISOString() : undefined),
-        isMyPoll: String(
-          poll.createdBy && (typeof poll.createdBy === 'object'
-            ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
-            : poll.createdBy)
-        ) === String(currentUserId),
-        createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
-        isOfficial: !!poll.isOfficial
-      }));
-       // sort newest first by createdAt (fallback to 0)
-       polls.sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
-       /* p */
-        console.log("currentUserId:", currentUserId);
-      console.log("polls:", polls.map((p: any) => ({
-        id: p.id,
-        createdBy: p.createdBy,
-        isMyPoll: p.isMyPoll
-      })));
-       /* p */
-  if (currentUserId) {
-  const votedRes = await API.client.get(`/polls/voted?userId=${currentUserId}`);
-  const votedPollIds = votedRes.data;
-        polls = polls.map((poll: any) => ({
-          ...poll,
-          hasVoted: votedPollIds.includes(poll.id)
-        }));
-      }
-      setPolls(polls);
-  })
-  .catch((err: any) => console.error("Error fetching polls:", err));
-}, []);
+    // use centralized fetch that shows the loader and parallelizes requests
+    fetchPolls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addOption = () => {
     if (pollOptions.length < 10) {
