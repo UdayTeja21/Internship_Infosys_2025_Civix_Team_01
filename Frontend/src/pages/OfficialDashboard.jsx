@@ -2623,6 +2623,8 @@ const OfficialDashboard = () => {
     const handleFormChange = (e) => setResponseForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const submitResponse = async () => {
         if (!selectedPetition || !responseForm.message.trim()) {
+            // close the response modal first so the toast is visible above it
+            closeResponseModal();
             setToast({ show: true, message: "Please fill in the response message", type: "error" });
             return;
         }
@@ -2658,13 +2660,17 @@ const OfficialDashboard = () => {
         if (pollOptions.length > 2) setPollOptions(pollOptions.filter((_, i) => i !== index));
     };
     const handleSubmitPoll = async () => {
-        if (!pollQuestion.trim() || pollOptions.some(opt => !opt.trim()) || !pollLocation.trim()) {
-            setToast({ show: true, message: "Please fill all poll fields.", type: "error" });
+        const filledOptions = pollOptions.filter(opt => opt.trim());
+        if (!pollQuestion.trim() || filledOptions.length < 2 || !pollLocation.trim()) {
+            // close the create modal first so the toast is visible above it
+            setShowPollModal(false);
+            setIsPollSubmitting(false);
+            setToast({ show: true, message: "All fields are required", type: "error" });
             return;
         }
-    setIsPollSubmitting(true);
-    showLoader();
-    try {
+        setIsPollSubmitting(true);
+        showLoader();
+        try {
             const pollData = {
                 title: pollQuestion,
                 description: pollDescription,

@@ -784,50 +784,9 @@ const Polls: React.FC = () => {
   const tabs = ['Active Polls', 'Polls I Voted On', 'My Polls'];
 
   useEffect(() => {
-    const currentUserId = localStorage.getItem("userId");
-    API.getAllPolls()
-      .then(async (res: any) => {
-        let polls = res.data.map((poll: any) => ({
-          id: poll._id,
-          question: poll.title,
-          description: poll.description,
-          options: poll.options.map((o: any) => o.text),
-          closesOn: poll.closeDate,
-          votes: poll.options.map((o: any) => o.votes),
-          totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
-          hasVoted: false,
-          location: poll.targetLocation || '',
-          // derive createdAt from explicit field or from MongoDB ObjectId timestamp
-          createdAt: poll.createdAt || (poll._id ? new Date(parseInt(String(poll._id).substring(0, 8), 16) * 1000).toISOString() : undefined),
-          isMyPoll: String(
-            poll.createdBy && (typeof poll.createdBy === 'object'
-              ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
-              : poll.createdBy)
-          ) === String(currentUserId),
-          createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
-          isOfficial: !!poll.isOfficial
-        }));
-        // sort newest first by createdAt (fallback to 0)
-        polls.sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
-        
-        console.log("currentUserId:", currentUserId);
-        console.log("polls:", polls.map((p: any) => ({
-          id: p.id,
-          createdBy: p.createdBy,
-          isMyPoll: p.isMyPoll
-        })));
-        
-        if (currentUserId) {
-          const votedRes = await API.client.get(`/polls/voted?userId=${currentUserId}`);
-          const votedPollIds = votedRes.data;
-          polls = polls.map((poll: any) => ({
-            ...poll,
-            hasVoted: votedPollIds.includes(poll.id)
-          }));
-        }
-        setPolls(polls);
-      })
-      .catch((err: any) => console.error("Error fetching polls:", err));
+    // use centralized fetch that shows the loader and parallelizes requests
+    fetchPolls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addOption = () => {
@@ -897,22 +856,21 @@ const Polls: React.FC = () => {
 
   const createPoll = async () => {
     const userId = localStorage.getItem("userId");
-    if (!userId) {
-      setToast({ show: true, message: "You must be logged in to create a poll.", type: "error" });
-      return;
-    }
-    // Validate all required fields: question, at least 2 options, and location
-    const filledOptions = pollOptions.filter(opt => opt.trim());
-    if (!pollQuestion.trim() || filledOptions.length < 2 || !pollLocation.trim()) {
-      // Close the modal first so the toast isn't hidden behind it
-      setShowCreateModal(false);
-      setLocationError('');
-      setToast({ show: true, message: "All fields are required", type: "error" });
-      return;
-    } else {
-      setLocationError('');
-    }
-    
+  if (!userId) {
+    setToast({ show: true, message: "You must be logged in to create a poll.", type: "error" });
+    return;
+  }
+  // Validate all required fields: question, at least 2 options, and location
+  const filledOptions = pollOptions.filter(opt => opt.trim());
+  if (!pollQuestion.trim() || filledOptions.length < 2 || !pollLocation.trim()) {
+    // Close the modal first so the toast isn't hidden behind it
+    setShowCreateModal(false);
+    setLocationError('');
+    setToast({ show: true, message: "All fields are required", type: "error" });
+    return;
+  } else {
+    setLocationError('');
+  }
     const pollData = {
       title: pollQuestion.trim(),
       description: pollDescription.trim(),
