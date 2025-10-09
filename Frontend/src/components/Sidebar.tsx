@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
         </div>
       )}
 
-      <div className="w-64 bg-green-50 border-r border-green-200 h-screen flex flex-col sticky top-0">
+  <div className="hidden lg:flex w-64 bg-green-50 border-r border-green-200 h-screen flex-col sticky top-0">
         <div className="p-6 flex-1 overflow-y-auto">
           <div className="mb-8">
             <div className="flex items-center mb-2">
