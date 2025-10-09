@@ -7,6 +7,7 @@ import Sidebar from '../components/Sidebar';
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showMobileNav, setShowMobileNav] = useState(false);
   
   // State for data that will be passed down to child components
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -51,7 +52,64 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-gradient-to-b from-green-300 to-green-400 p-4 shadow-md sticky top-0 z-30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowMobileNav(true)}
+              className="text-2xl text-green-800 mr-4"
+            >
+              ☰
+            </button>
+            <div className="flex items-center text-green-800">
+              <div className="text-2xl mr-2">🏛️</div>
+              <div className="text-xl font-bold">CIVIX</div>
+            </div>
+          </div>
+          <div className="text-green-800 font-semibold text-sm">Dashboard</div>
+        </div>
+      </div>
+
+      {/* Mobile Nav Drawer */}
+      {showMobileNav && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden">
+          <div className="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-green-300 to-green-400 p-6 shadow-xl flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center text-green-800">
+                <div className="text-3xl mr-3">🏛️</div>
+                <div className="text-2xl font-bold">CIVIX</div>
+              </div>
+              <button onClick={() => setShowMobileNav(false)} className="text-2xl text-green-800">×</button>
+            </div>
+
+            <nav className="flex-1">
+              <div className={`p-3 mb-2 rounded-lg cursor-pointer text-green-800 font-medium hover:bg-white hover:bg-opacity-40`} onClick={() => { setShowMobileNav(false); navigate('/dashboard'); }}>
+                🏠 Dashboard
+              </div>
+              <div className={`p-3 mb-2 rounded-lg cursor-pointer text-green-800 font-medium hover:bg-white hover:bg-opacity-40`} onClick={() => { setShowMobileNav(false); navigate('/dashboard/petitions'); }}>
+                📝 Petitions
+              </div>
+              <div className={`p-3 mb-2 rounded-lg cursor-pointer text-green-800 font-medium hover:bg-white hover:bg-opacity-40`} onClick={() => { setShowMobileNav(false); navigate('/dashboard/polls'); }}>
+                📊 Polls
+              </div>
+              <div className={`p-3 mb-2 rounded-lg cursor-pointer text-green-800 font-medium hover:bg-white hover:bg-opacity-40`} onClick={() => { setShowMobileNav(false); navigate('/dashboard/officials'); }}>
+                👥 Officials
+              </div>
+              <div className={`p-3 mb-2 rounded-lg cursor-pointer text-green-800 font-medium hover:bg-white hover:bg-opacity-40`} onClick={() => { setShowMobileNav(false); navigate('/dashboard/settings'); }}>
+                ⚙️ Settings
+              </div>
+            </nav>
+
+            <div className="mt-auto">
+              <button onClick={() => { setShowMobileNav(false); navigate('/login'); }} className="w-full py-2 px-4 bg-red-600 text-white rounded hover:bg-red-700">Sign Out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Sticky Sidebar - Fixed position */}
       <div className="sticky top-0 h-screen flex-shrink-0">
         <Sidebar
@@ -78,6 +136,7 @@ const DashboardLayout = () => {
         />
       </div>
     </div>
+    </>
   );
 };
 
