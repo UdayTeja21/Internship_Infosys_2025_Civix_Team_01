@@ -351,8 +351,9 @@ const OfficialSettings = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 p-3 md:p-4 lg:p-6">
       {/* Success Message */}
-      {successMessage && (
-        <div className="fixed bottom-4 md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-xs md:max-w-md w-full mx-4">
+      {/* Success Message */}
+{successMessage && (
+  <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 max-w-xs md:max-w-md w-full mx-4">
           <div className="bg-green-100 border-l-4 border-green-500 text-green-800 px-4 md:px-6 py-3 rounded-lg shadow-md text-sm md:text-base">
             {successMessage}
           </div>
