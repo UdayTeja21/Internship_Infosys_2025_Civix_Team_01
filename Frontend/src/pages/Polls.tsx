@@ -1,0 +1,1361 @@
+// // @ts-ignore - api.js is a JS module without .d.ts; treat as any
+// import API from "../api";
+// import { Edit, Plus, Trash2, X } from 'lucide-react'; // Added Edit and Trash2 icons
+// import React, { useEffect, useState } from 'react';
+// // @ts-ignore - LoadingContext is a .jsx module
+// import { useLoading } from '../components/LoadingContext';
+
+// // Interfaces and ToastModal component remain the same...
+// interface Poll {
+//   id: string;
+//   question: string;
+//   description: string;
+//   options: string[];
+//   closesOn: string;
+//   votes: number[];
+//   totalVotes: number;
+//   hasVoted: boolean;
+//   location: string;
+//   isMyPoll: boolean;
+//   isOfficial?: boolean;
+//   createdBy?: {
+//     fullName: string;
+//     role: string;
+//   };
+//   createdAt?: string;
+// }
+
+// interface ToastModalProps {
+//   message: string;
+//   onClose: () => void;
+//   show: boolean;
+//   type?: "success" | "error";
+// }
+
+// const ToastModal: React.FC<ToastModalProps> = ({ message, onClose, show, type = "success" }) => {
+//   useEffect(() => {
+//     if (show) {
+//       const timer = setTimeout(onClose, 2000);
+//       return () => clearTimeout(timer);
+//     }
+//   }, [show, onClose]);
+
+//   if (!show) return null;
+
+//   return (
+//     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+//       <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 flex flex-col items-center">
+//         <div className={mb-4 text-4xl ${type === "success" ? "text-green-500" : "text-red-500"}}>
+//           {type === "success" ? "✔" : "❌"}
+//         </div>
+//         <div className="text-lg font-semibold text-gray-800 mb-2 text-center">{message}</div>
+//         <div className="text-sm text-gray-500 mb-4 text-center">This popup will close automatically.</div>
+//         <button
+//           onClick={onClose}
+//           className={`px-6 py-2 rounded-lg font-semibold ${
+//             type === "success" ? "bg-green-600 text-white hover:bg-green-700" : "bg-red-600 text-white hover:bg-red-700"
+//           }`}
+//         >
+//           Close Now
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+
+// const Polls: React.FC = () => {
+  
+//   const [showCreateModal, setShowCreateModal] = useState(false);
+//   const [polls, setPolls] = useState<Poll[]>([]);
+//   const [activeTab, setActiveTab] = useState('Active Polls');
+
+
+//   // Form state
+//   const [pollQuestion, setPollQuestion] = useState('');
+//   const [pollDescription, setPollDescription] = useState('');
+//   const [pollOptions, setPollOptions] = useState(['', '']);
+//   const [pollLocation, setPollLocation] = useState('');
+//   const [selectedLocation, setSelectedLocation] = useState("All Locations");
+//   const [locationError, setLocationError] = useState('');
+//   const [closesOn, setClosesOn] = useState('');
+//   const [toast, setToast] = useState<{ show: boolean; message: string; type?: "success" | "error" }>({ show: false, message: "", type: "success" });
+//   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+//   const { showLoader, hideLoader } = useLoading();
+//   const tabs = ['Active Polls', 'Polls I Voted On', 'My Polls'];
+
+
+//   useEffect(() => {
+//   const currentUserId = localStorage.getItem("userId");
+//   API.getAllPolls()
+//     .then(async (res: any) => {
+//         let polls = res.data.map((poll: any) => ({
+//         id: poll._id,
+//         question: poll.title,
+//         description: poll.description,
+//         options: poll.options.map((o: any) => o.text),
+//         closesOn: poll.closeDate,
+//         votes: poll.options.map((o: any) => o.votes),
+//         totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
+//         hasVoted: false,
+//         location: poll.targetLocation || '',
+//         // derive createdAt from explicit field or from MongoDB ObjectId timestamp
+//         createdAt: poll.createdAt || (poll._id ? new Date(parseInt(String(poll._id).substring(0, 8), 16) * 1000).toISOString() : undefined),
+//         isMyPoll: String(
+//           poll.createdBy && (typeof poll.createdBy === 'object'
+//             ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
+//             : poll.createdBy)
+//         ) === String(currentUserId),
+//         createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
+//         isOfficial: !!poll.isOfficial
+//       }));
+//        // sort newest first by createdAt (fallback to 0)
+//        polls.sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
+//        /* p */
+//         console.log("currentUserId:", currentUserId);
+//       console.log("polls:", polls.map((p: any) => ({
+//         id: p.id,
+//         createdBy: p.createdBy,
+//         isMyPoll: p.isMyPoll
+//       })));
+//        /* p */
+//   if (currentUserId) {
+//   const votedRes = await API.client.get(/polls/voted?userId=${currentUserId});
+//   const votedPollIds = votedRes.data;
+//         polls = polls.map((poll: any) => ({
+//           ...poll,
+//           hasVoted: votedPollIds.includes(poll.id)
+//         }));
+//       }
+//       setPolls(polls);
+//   })
+//   .catch((err: any) => console.error("Error fetching polls:", err));
+// }, []);
+
+//   const addOption = () => {
+//     if (pollOptions.length < 10) {
+//       setPollOptions([...pollOptions, '']);
+//     }
+//   };
+
+//   const removeOption = (index: number) => {
+//     if (pollOptions.length > 2) {
+//       setPollOptions(pollOptions.filter((_, i) => i !== index));
+//     }
+//   };
+  
+//   const allLocations = [
+//   "All Locations",
+//   ...Array.from(new Set(polls.map((poll) => poll.location).filter(Boolean)))
+// ];
+
+//   const updateOption = (index: number, value: string) => {
+//     const newOptions = [...pollOptions];
+//     newOptions[index] = value;
+//     setPollOptions(newOptions);
+//   };
+//   const fetchPolls = async () => {
+//   showLoader();
+//   try {
+//   const currentUserId = localStorage.getItem("userId");
+//   const res = await API.getAllPolls();
+//   let polls = res.data.map((poll: any) => ({
+//     id: poll._id,
+//     question: poll.title,
+//     description: poll.description,
+//     options: poll.options.map((o: any) => o.text),
+//     closesOn: poll.closeDate,
+//     votes: poll.options.map((o: any) => o.votes),
+//     totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
+//     hasVoted: false,
+//     location: poll.targetLocation || 'San Diego, CA',
+//     createdAt: poll.createdAt || (poll._id ? new Date(parseInt(String(poll._id).substring(0, 8), 16) * 1000).toISOString() : undefined),
+//     isMyPoll: String(
+//       poll.createdBy && (typeof poll.createdBy === 'object'
+//         ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
+//         : poll.createdBy)
+//     ) === String(currentUserId),
+//     createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
+//     isOfficial: !!poll.isOfficial
+//   }));
+//   // newest first
+//   polls.sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
+//   if (currentUserId) {
+//     const votedRes = await API.client.get(/polls/voted?userId=${currentUserId});
+//     const votedPollIds = votedRes.data;
+//     polls = polls.map((poll: any) => ({
+//       ...poll,
+//       hasVoted: votedPollIds.includes(poll.id)
+//     }));
+//   }
+//   setPolls(polls);
+//   setPolls(polls);
+//   } catch (err) {
+//     console.error('Error in fetchPolls:', err);
+//   } finally {
+//     hideLoader();
+//   }
+// };
+
+//   const createPoll = async () => {
+//     const userId = localStorage.getItem("userId");
+//   if (!userId) {
+//     setToast({ show: true, message: "You must be logged in to create a poll.", type: "error" });
+//     return;
+//   }
+//   // Validate all required fields: question, at least 2 options, and location
+//   const filledOptions = pollOptions.filter(opt => opt.trim());
+//   if (!pollQuestion.trim() || filledOptions.length < 2 || !pollLocation.trim()) {
+//     // Close the modal first so the toast isn't hidden behind it
+//     setShowCreateModal(false);
+//     setLocationError('');
+//     setToast({ show: true, message: "All fields are required", type: "error" });
+//     return;
+//   } else {
+//     setLocationError('');
+//   }
+//     const pollData = {
+//       title: pollQuestion.trim(),
+//       description: pollDescription.trim(),
+//       options: pollOptions.filter(opt => opt.trim()),
+//       targetLocation: pollLocation.trim(),
+//       createdBy: userId,
+//       closeDate: closesOn,
+//     };
+
+//     try {
+//       showLoader();
+//       const res = await API.createPoll(pollData);
+//         await fetchPolls();
+//       setPolls([
+//         {
+//           id: res.data._id,
+//           question: res.data.title,
+//           description: res.data.description,
+//           options: res.data.options.map((o: any) => o.text),
+//           closesOn: res.data.closeDate,
+//           votes: res.data.options.map((o: any) => o.votes),
+//           totalVotes: res.data.options.reduce((sum: number, o: any) => sum + o.votes, 0),
+//           hasVoted: false,
+//           location: res.data.targetLocation || 'San Diego, CA',
+//           isMyPoll: true
+//         },
+//         ...polls
+//       ]);
+//       setPollQuestion('');
+//       setPollDescription('');
+//       setPollOptions(['', '']);
+//       setPollLocation('');
+//       setClosesOn('');
+//       setShowCreateModal(false);
+// setToast({ show: true, message: "Poll created successfully! 🎉", type: "success" });
+
+//     } catch (err: any) {
+// setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+//     } finally {
+//       hideLoader();
+//     }
+//   };
+
+
+//     const voteOnPoll = async (pollId: string, optionIndex: number) => {
+//   const userId = localStorage.getItem("userId");
+//   if (!userId) {
+//     setToast({ show: true, message: "You must be logged in to vote.", type: "error" });
+//     return;
+//   }
+//     try {
+//     showLoader();
+//     await API.client.post(/polls/${pollId}/vote, {
+//       userId,
+//       selectedOption: optionIndex
+//     });
+//   await fetchPolls(); 
+//   setToast({ show: true, message: "Vote submitted!", type: "success" });
+//   } catch (err: any) {
+//     setToast({ show: true, message: "Error voting: " + (err.response?.data?.error || err.message), type: "error" });
+//   } finally {
+//     hideLoader();
+//   }
+// };
+//     const getFilteredPolls = () => {
+//     let filtered = polls;
+//     switch (activeTab) {
+//         case 'Active Polls':
+//         break;
+//         case 'Polls I Voted On':
+//         filtered = filtered.filter(poll => poll.hasVoted);
+//         break;
+//         case 'My Polls':
+//         filtered = filtered.filter(poll => poll.isMyPoll);
+//         break;
+//         default:
+//         break;
+//     }
+//     if (selectedLocation !== "All Locations") {
+//         filtered = filtered.filter(poll => poll.location === selectedLocation);
+//     }
+//     return filtered;
+//     };
+//     const filteredPolls = getFilteredPolls();
+
+// const handleEditPoll = (poll: Poll) => {
+//   setEditingPoll(poll);
+//   setShowCreateModal(true);
+//   setPollQuestion(poll.question);
+//   setPollDescription(poll.description);
+//   setPollOptions([...poll.options]);
+//     setPollLocation(poll.location);
+//   setClosesOn(poll.closesOn.split('T')[0]);
+// };
+
+// const handleUpdatePoll = async () => {
+//   if (!editingPoll) return;
+//   const pollData = {
+//     title: pollQuestion.trim(),
+//     description: pollDescription.trim(),
+//     options: pollOptions.filter(opt => opt.trim()),
+//     targetLocation: pollLocation.trim(),
+//     closeDate: closesOn,
+//   };
+//   try {
+//     showLoader();
+//   const res = await API.updatePoll(editingPoll.id, pollData);
+//     await fetchPolls();
+  
+//     setPolls(polls.map(p =>
+//   p.id === editingPoll.id
+//     ? {
+//         ...p,
+//         question: res.data.poll.title,
+//         description: res.data.poll.description,
+//         options: res.data.poll.options.map((o: any) => o.text),
+//         closesOn: res.data.poll.closeDate,
+//         location: res.data.poll.targetLocation
+//       }
+//     : p
+// ));
+//     setEditingPoll(null);
+//     setShowCreateModal(false);
+//     setPollQuestion('');
+//     setPollDescription('');
+//     setPollOptions(['', '']);
+//     setPollLocation('');
+//     setClosesOn('');
+// setToast({ show: true, message: "Poll updated successfully! ✨", type: "success" });
+//   } catch (err: any) {
+// setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+//   } finally {
+//     hideLoader();
+//   }
+// };
+// const handleCloseModal = () => {
+//   setShowCreateModal(false);
+//   setEditingPoll(null);
+//   setPollQuestion('');
+//   setPollDescription('');
+//   setPollOptions(['', '']);
+//   setLocationError('');
+//   setClosesOn('');
+// };
+
+// const handleDeletePoll = async (pollId: string) => {
+//   if (!window.confirm("Are you sure you want to delete this poll?")) return;
+//   try {
+//     showLoader();
+//   await API.deletePoll(pollId);
+//     await fetchPolls();
+//     setPolls(polls.filter(p => p.id !== pollId));
+// setToast({ show: true, message: "Poll deleted successfully! 🗑", type: "success" });
+//   } catch (err: any) {
+// setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+//   } finally {
+//     hideLoader();
+//   }
+// };
+
+//   return (
+//       <>
+//       <ToastModal
+//         show={toast.show}
+//         message={toast.message}
+//         type={toast.type}
+//         onClose={() => setToast({ ...toast, show: false })}
+//       />
+//     <div className="flex-1 p-6 bg-gray-50 min-h-screen">
+//       {/* Create Poll Modal */}
+//       {showCreateModal && (
+//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+//           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+//             <div className="flex justify-between items-center p-6 border-b border-gray-200">
+//               <h2 className="text-xl font-semibold text-gray-800">{editingPoll ? "Edit Poll" : "Create a new poll"}</h2>
+//               <button 
+//                   onClick={handleCloseModal}
+//                   className="text-gray-400 hover:text-gray-600"
+//                     >
+//                 <X className="h-6 w-6" />
+//                   </button>
+//             </div>
+
+//             <div className="p-6">
+//               <p className="text-sm text-gray-600 mb-6">
+//                 {editingPoll ? "Update the details for your poll." : "Create a new poll to gather community feedback on local issues"}
+//               </p>
+
+//               <div className="mb-6">
+//                 <label className="block text-sm font-medium text-gray-700 mb-2">
+//                   Poll Question
+//                 </label>
+//                 <input
+//                   type="text"
+//                   value={pollQuestion}
+//                   onChange={(e) => setPollQuestion(e.target.value)}
+//                   placeholder="What do you want to ask the community?"
+//                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+//                 />
+//                 <p className="text-xs text-gray-500 mt-1">Keep your question clear and specific.</p>
+//               </div>
+
+//               <div className="mb-6">
+//                 <label className="block text-sm font-medium text-gray-700 mb-2">
+//                   Description
+//                 </label>
+//                 <textarea
+//                   value={pollDescription}
+//                   onChange={(e) => setPollDescription(e.target.value)}
+//                   placeholder="Provide more context about the poll..."
+//                   rows={3}
+//                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+//                 />
+//                 <p className="text-xs text-gray-500 mt-1">
+//                   Give community members enough information to make an informed choice.
+//                 </p>
+//               </div>
+//               <div className="mb-6">
+//                 <label className="block text-sm font-medium text-gray-700 mb-2">
+//                     Location <span className="text-red-500">*</span>
+//                 </label>
+//                 <input
+//                     type="text"
+//                     value={pollLocation}
+//                     onChange={(e) => setPollLocation(e.target.value)}
+//                     placeholder="Enter location (e.g., Delhi, Mumbai)"
+//                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+//                     required
+//                 />
+//                 {locationError && (
+//                     <p className="text-red-500 text-xs mt-1">{locationError}</p>
+//                 )}
+//               </div>
+//               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-2">
+//                     Poll Options
+//                   </label>
+//                   <div className="space-y-2">
+//                     {pollOptions.map((option, index) => (
+//                       <div key={index} className="flex gap-2">
+//                         <input
+//                           type="text"
+//                           value={option}
+//                           onChange={(e) => updateOption(index, e.target.value)}
+//                           placeholder={Option ${index + 1}}
+//                           className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+//                         />
+//                         {pollOptions.length > 2 && (
+//                           <button
+//                             onClick={() => removeOption(index)}
+//                             className="p-2 text-red-500 hover:text-red-700"
+//                           >
+//                             <X className="h-4 w-4" />
+//                           </button>
+//                         )}
+//                       </div>
+//                     ))}
+//                     {pollOptions.length < 10 && (
+//                       <button
+//                         onClick={addOption}
+//                         className="flex items-center gap-2 text-blue-600 hover:text-blue-700 p-2"
+//                       >
+//                         <Plus className="h-4 w-4" />
+//                         Add Option
+//                       </button>
+//                     )}
+//                   </div>
+//                   <p className="text-xs text-gray-500 mt-1">
+//                     Add at least 2 options, up to a maximum of 10
+//                   </p>
+//                 </div>
+
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-2">
+//                     Closes On
+//                   </label>
+//                   <input
+//                     type="date"
+//                     value={closesOn}
+//                     onChange={(e) => setClosesOn(e.target.value)}
+//                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+//                   />
+//                   <p className="text-xs text-gray-500 mt-1">
+//                     Choose when this poll will close
+//                   </p>
+//                 </div>
+//               </div>
+
+//               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+//                 <div className="flex items-start gap-3">
+//                   <div className="bg-green-100 rounded-full p-1 mt-0.5">
+//                     <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
+//                       <span className="text-white text-xs font-bold">!</span>
+//                     </div>
+//                   </div>
+//                   <div>
+//                     <h4 className="font-medium text-green-800 mb-1">Important information</h4>
+//                     <p className="text-sm text-green-700">
+//                       Polls should be designed to gather genuine community feedback on 
+//                       issues that affect your area. Polls that are misleading or 
+//                       designed to push a specific agenda may be removed.
+//                     </p>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               <div className="flex gap-3 justify-end">
+//                 <button
+//                     onClick={handleCloseModal}
+//                     className="px-6 py-2 text-gray-600 hover:text-gray-800"
+//                     >
+//                     Cancel
+//                 </button>
+//                 <button
+//                     onClick={editingPoll ? handleUpdatePoll : createPoll}
+//                     className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors"
+//                     >
+//                     {editingPoll ? "Update Poll" : "Create Poll"}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Main Polls Container */}
+//       <div className="bg-white rounded-lg shadow-sm border">
+//         <div className="p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+//           <div>
+//             <h1 className="text-2xl font-bold text-gray-800 mb-1">Polls</h1>
+//             <p className="text-gray-600">Participate in community polls and make your voice heard.</p>
+//           </div>
+//           <button 
+//             onClick={() => setShowCreateModal(true)}
+//             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+//           >
+//             <Plus className="h-4 w-4" />
+//             Create Poll
+//           </button>
+//         </div>
+
+//           <div className="border-b border-gray-200">
+//             <div className="flex flex-wrap items-center p-2">
+//             {/* Tabs */}
+//             <div className="flex">
+//               {tabs.map((tab) => (
+//                 <button
+//                   key={tab}
+//                   onClick={() => setActiveTab(tab)}
+//                   className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative ${
+//                     activeTab === tab
+//                       ? 'text-blue-600'
+//                       : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+//                   }`}
+//                 >
+//                   {tab}
+//                   {activeTab === tab && (
+//                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+//                   )}
+//                 </button>
+//               ))}
+//             </div>
+//             {/* Location Filter Dropdown */}
+//             <div className="ml-auto flex items-center gap-2 p-2">
+//               <span className="text-sm text-gray-700 font-medium">Location:</span>
+//               <select
+//                 value={selectedLocation}
+//                 onChange={e => setSelectedLocation(e.target.value)}
+//                 className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500"
+//               >
+//                 {allLocations.map(loc => (
+//                   <option key={loc} value={loc}>{loc}</option>
+//                 ))}
+//               </select>
+//             </div>
+//             </div>
+//         </div>
+        
+//         <div className="p-6 md:p-8">
+//           {filteredPolls.length === 0 ? (
+//             <div className="text-center py-10">
+//               <div className="text-gray-500 mb-4">No polls found with the current filters.</div>
+//               <button 
+//                 onClick={() => { setActiveTab('Active Polls'); setSelectedLocation('All Locations'); }}
+//                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+//               >
+//                 Clear Filters
+//               </button>
+//             </div>
+//           ) : (
+//             <div className="space-y-4">
+//               {filteredPolls.map((poll) => (
+//                 <div key={poll.id} className="bg-gray-50 p-6 rounded-lg border">
+//                   {/* --- UPDATED POLL HEADER --- */}
+//                   <div className="flex flex-wrap gap-4 justify-between items-start mb-4">
+//                     <div className="flex-grow">
+//                       <div className="flex items-center flex-wrap gap-x-3 gap-y-2 mb-2">
+//                         <h3 className="text-lg font-semibold text-gray-800">{poll.question}</h3>
+//                         <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-1 rounded-full">{poll.location}</span>
+//                         {poll.isMyPoll && (
+//                            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">Your Poll</span>
+//                         )}
+//                         {(poll.isOfficial || poll.createdBy?.role === "official") && (
+//                            <span title="Official Poll" className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+//                              <svg className="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 01.894.553l1.382 2.764 3.05.444a1 1 0 01.554 1.706l-2.207 2.15.521 3.037a1 1 0 01-1.451 1.054L10 12.347l-2.743 1.441a1 1 0 01-1.451-1.054l.521-3.037-2.207-2.15a1 1 0 01.554-1.706l3.05-.444L9.106 2.553A1 1 0 0110 2z" /></svg>
+//                              Official
+//                            </span>
+//                         )}
+//                       </div>
+//                       {poll.description && <p className="text-sm text-gray-600">{poll.description}</p>}
+//                     </div>
+//                     {poll.isMyPoll && (
+//                       <div className="flex gap-2 items-center flex-shrink-0">
+//                         <button
+//                           onClick={() => handleEditPoll(poll)}
+//                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
+//                         >
+//                           <Edit className="h-4 w-4" />
+//                           <span>Edit</span>
+//                         </button>
+//                         <button
+//                           onClick={() => handleDeletePoll(poll.id)}
+//                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+//                         >
+//                           <Trash2 className="h-4 w-4" />
+//                           <span>Delete</span>
+//                         </button>
+//                       </div>
+//                     )}
+//                   </div>
+//                   {/* --- END OF UPDATED HEADER --- */}
+                  
+//                   <div className="space-y-2 mb-4">
+//                     {poll.options.map((option, index) => (
+//                       <div key={index}>
+//                         <button
+//                           onClick={() => voteOnPoll(poll.id, index)}
+//                           disabled={poll.hasVoted}
+//                           className={`w-full text-left p-3 rounded-lg border transition-colors ${
+//                             poll.hasVoted 
+//                               ? 'bg-white cursor-not-allowed' 
+//                               : 'bg-white hover:bg-blue-50 hover:border-blue-300'
+//                           }`}
+//                         >
+//                           <div className="flex justify-between items-center">
+//                             <span>{option}</span>
+//                             {poll.hasVoted && (
+//                               <div className="flex items-center gap-2">
+//                                 <div className="w-20 bg-gray-200 rounded-full h-2">
+//                                   <div 
+//                                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+//                                     style={{ 
+//                                       width: ${poll.totalVotes > 0 ? (poll.votes[index] / poll.totalVotes) * 100 : 0}% 
+//                                     }}
+//                                   ></div>
+//                                 </div>
+//                                 <span className="text-sm text-gray-600">{poll.votes[index]}</span>
+//                               </div>
+//                             )}
+//                           </div>
+//                         </button>
+//                       </div>
+//                     ))}
+//                   </div>
+//                   <div className="flex justify-between text-sm text-gray-500">
+//                     <span>Closes on: {new Date(poll.closesOn).toLocaleDateString()}</span>
+//                     <span>Total votes: {poll.totalVotes}</span>
+//                   </div>
+//                   {poll.hasVoted && (
+//                     <div className="mt-2 text-sm text-green-600 font-medium">
+//                       ✓ You have voted on this poll
+//                     </div>
+//                   )}
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//     </>
+//   );
+// };
+
+// export default Polls;
+// @ts-ignore - api.js is a JS module without .d.ts; treat as any
+import API from "../api";
+import { Edit, Plus, Trash2, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+// @ts-ignore - LoadingContext is a .jsx module
+import { useLoading } from '../components/LoadingContext';
+
+// Interfaces and ToastModal component remain the same...
+interface Poll {
+  id: string;
+  question: string;
+  description: string;
+  options: string[];
+  closesOn: string;
+  votes: number[];
+  totalVotes: number;
+  hasVoted: boolean;
+  location: string;
+  isMyPoll: boolean;
+  isOfficial?: boolean;
+  createdBy?: {
+    fullName: string;
+    role: string;
+  };
+  createdAt?: string;
+}
+
+interface ToastModalProps {
+  message: string;
+  onClose: () => void;
+  show: boolean;
+  type?: "success" | "error";
+}
+
+const ToastModal: React.FC<ToastModalProps> = ({ message, onClose, show, type = "success" }) => {
+  useEffect(() => {
+    if (show) {
+      const timer = setTimeout(onClose, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [show, onClose]);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 flex flex-col items-center">
+        <div className={`mb-4 text-4xl ${type === "success" ? "text-green-500" : "text-red-500"}`}>
+          {type === "success" ? "✔" : "❌"}
+        </div>
+        <div className="text-lg font-semibold text-gray-800 mb-2 text-center">{message}</div>
+        <div className="text-sm text-gray-500 mb-4 text-center">This popup will close automatically.</div>
+        <button
+          onClick={onClose}
+          className={`px-6 py-2 rounded-lg font-semibold ${
+            type === "success" ? "bg-green-600 text-white hover:bg-green-700" : "bg-red-600 text-white hover:bg-red-700"
+          }`}
+        >
+          Close Now
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Polls: React.FC = () => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [activeTab, setActiveTab] = useState('Active Polls');
+
+  // Form state
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollDescription, setPollDescription] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollLocation, setPollLocation] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState("All Locations");
+  const [locationError, setLocationError] = useState('');
+  const [closesOn, setClosesOn] = useState('');
+  const [toast, setToast] = useState<{ show: boolean; message: string; type?: "success" | "error" }>({ show: false, message: "", type: "success" });
+  const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const { showLoader, hideLoader } = useLoading();
+  const tabs = ['Active Polls', 'Polls I Voted On', 'My Polls'];
+
+  useEffect(() => {
+    // use centralized fetch that shows the loader and parallelizes requests
+    fetchPolls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addOption = () => {
+    if (pollOptions.length < 10) {
+      setPollOptions([...pollOptions, '']);
+    }
+  };
+
+  const removeOption = (index: number) => {
+    if (pollOptions.length > 2) {
+      setPollOptions(pollOptions.filter((_, i) => i !== index));
+    }
+  };
+  
+  const allLocations = [
+    "All Locations",
+    ...Array.from(new Set(polls.map((poll) => poll.location).filter(Boolean)))
+  ];
+
+  const updateOption = (index: number, value: string) => {
+    const newOptions = [...pollOptions];
+    newOptions[index] = value;
+    setPollOptions(newOptions);
+  };
+
+  const fetchPolls = async () => {
+    showLoader();
+    try {
+      const currentUserId = localStorage.getItem("userId");
+      const res = await API.getAllPolls();
+      let polls = res.data.map((poll: any) => ({
+        id: poll._id,
+        question: poll.title,
+        description: poll.description,
+        options: poll.options.map((o: any) => o.text),
+        closesOn: poll.closeDate,
+        votes: poll.options.map((o: any) => o.votes),
+        totalVotes: poll.options.reduce((sum: number, o: any) => sum + o.votes, 0),
+        hasVoted: false,
+        location: poll.targetLocation || 'San Diego, CA',
+        createdAt: poll.createdAt || (poll._id ? new Date(parseInt(String(poll._id).substring(0, 8), 16) * 1000).toISOString() : undefined),
+        isMyPoll: String(
+          poll.createdBy && (typeof poll.createdBy === 'object'
+            ? (poll.createdBy._id || poll.createdBy.id || poll.createdBy)
+            : poll.createdBy)
+        ) === String(currentUserId),
+        createdBy: (poll.createdBy && typeof poll.createdBy === 'object') ? poll.createdBy : { _id: poll.createdBy },
+        isOfficial: !!poll.isOfficial
+      }));
+      // newest first
+      polls.sort((a: any, b: any) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()));
+      if (currentUserId) {
+        const votedRes = await API.client.get(`/polls/voted?userId=${currentUserId}`);
+        const votedPollIds = votedRes.data;
+        polls = polls.map((poll: any) => ({
+          ...poll,
+          hasVoted: votedPollIds.includes(poll.id)
+        }));
+      }
+      setPolls(polls);
+    } catch (err) {
+      console.error('Error in fetchPolls:', err);
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const createPoll = async () => {
+    const userId = localStorage.getItem("userId");
+  if (!userId) {
+    setToast({ show: true, message: "You must be logged in to create a poll.", type: "error" });
+    return;
+  }
+  // Validate all required fields: question, at least 2 options, and location
+  const filledOptions = pollOptions.filter(opt => opt.trim());
+  if (!pollQuestion.trim() || filledOptions.length < 2 || !pollLocation.trim()) {
+    // Close the modal first so the toast isn't hidden behind it
+    setShowCreateModal(false);
+    setLocationError('');
+    setToast({ show: true, message: "All fields are required", type: "error" });
+    return;
+  } else {
+    setLocationError('');
+  }
+    const pollData = {
+      title: pollQuestion.trim(),
+      description: pollDescription.trim(),
+      options: pollOptions.filter(opt => opt.trim()),
+      targetLocation: pollLocation.trim(),
+      createdBy: userId,
+      closeDate: closesOn,
+    };
+
+    try {
+      showLoader();
+      const res = await API.createPoll(pollData);
+      await fetchPolls();
+      setPolls([
+        {
+          id: res.data._id,
+          question: res.data.title,
+          description: res.data.description,
+          options: res.data.options.map((o: any) => o.text),
+          closesOn: res.data.closeDate,
+          votes: res.data.options.map((o: any) => o.votes),
+          totalVotes: res.data.options.reduce((sum: number, o: any) => sum + o.votes, 0),
+          hasVoted: false,
+          location: res.data.targetLocation || 'San Diego, CA',
+          isMyPoll: true
+        },
+        ...polls
+      ]);
+      setPollQuestion('');
+      setPollDescription('');
+      setPollOptions(['', '']);
+      setPollLocation('');
+      setClosesOn('');
+      setShowCreateModal(false);
+      setToast({ show: true, message: "Poll created successfully! 🎉", type: "success" });
+
+    } catch (err: any) {
+      setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const voteOnPoll = async (pollId: string, optionIndex: number) => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      setToast({ show: true, message: "You must be logged in to vote.", type: "error" });
+      return;
+    }
+    try {
+      showLoader();
+      await API.client.post(`/polls/${pollId}/vote`, {
+        userId,
+        selectedOption: optionIndex
+      });
+      await fetchPolls(); 
+      setToast({ show: true, message: "Vote submitted!", type: "success" });
+    } catch (err: any) {
+      setToast({ show: true, message: "Error voting: " + (err.response?.data?.error || err.message), type: "error" });
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const getFilteredPolls = () => {
+    let filtered = polls;
+    switch (activeTab) {
+      case 'Active Polls':
+        break;
+      case 'Polls I Voted On':
+        filtered = filtered.filter(poll => poll.hasVoted);
+        break;
+      case 'My Polls':
+        filtered = filtered.filter(poll => poll.isMyPoll);
+        break;
+      default:
+        break;
+    }
+    if (selectedLocation !== "All Locations") {
+      filtered = filtered.filter(poll => poll.location === selectedLocation);
+    }
+    return filtered;
+  };
+
+  const filteredPolls = getFilteredPolls();
+
+  const handleEditPoll = (poll: Poll) => {
+    setEditingPoll(poll);
+    setShowCreateModal(true);
+    setPollQuestion(poll.question);
+    setPollDescription(poll.description);
+    setPollOptions([...poll.options]);
+    setPollLocation(poll.location);
+    setClosesOn(poll.closesOn.split('T')[0]);
+  };
+
+  const handleUpdatePoll = async () => {
+    if (!editingPoll) return;
+    const pollData = {
+      title: pollQuestion.trim(),
+      description: pollDescription.trim(),
+      options: pollOptions.filter(opt => opt.trim()),
+      targetLocation: pollLocation.trim(),
+      closeDate: closesOn,
+    };
+    try {
+      showLoader();
+      const res = await API.updatePoll(editingPoll.id, pollData);
+      await fetchPolls();
+    
+      setPolls(polls.map(p =>
+        p.id === editingPoll.id
+          ? {
+              ...p,
+              question: res.data.poll.title,
+              description: res.data.poll.description,
+              options: res.data.poll.options.map((o: any) => o.text),
+              closesOn: res.data.poll.closeDate,
+              location: res.data.poll.targetLocation
+            }
+          : p
+      ));
+      setEditingPoll(null);
+      setShowCreateModal(false);
+      setPollQuestion('');
+      setPollDescription('');
+      setPollOptions(['', '']);
+      setPollLocation('');
+      setClosesOn('');
+      setToast({ show: true, message: "Poll updated successfully! ✨", type: "success" });
+    } catch (err: any) {
+      setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+    } finally {
+      hideLoader();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setEditingPoll(null);
+    setPollQuestion('');
+    setPollDescription('');
+    setPollOptions(['', '']);
+    setLocationError('');
+    setClosesOn('');
+  };
+
+  const handleDeletePoll = async (pollId: string) => {
+    if (!window.confirm("Are you sure you want to delete this poll?")) return;
+    try {
+      showLoader();
+      await API.deletePoll(pollId);
+      await fetchPolls();
+      setPolls(polls.filter(p => p.id !== pollId));
+      setToast({ show: true, message: "Poll deleted successfully! 🗑", type: "success" });
+    } catch (err: any) {
+      setToast({ show: true, message: "Error: " + (err.response?.data?.error || err.message), type: "error" });
+    } finally {
+      hideLoader();
+    }
+  };
+
+  return (
+    <>
+      <ToastModal
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+      <div className="flex-1 p-6 bg-gray-50 min-h-screen">
+        {/* Create Poll Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800">{editingPoll ? "Edit Poll" : "Create a new poll"}</h2>
+                <button 
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <p className="text-sm text-gray-600 mb-6">
+                  {editingPoll ? "Update the details for your poll." : "Create a new poll to gather community feedback on local issues"}
+                </p>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Poll Question
+                  </label>
+                  <input
+                    type="text"
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    placeholder="What do you want to ask the community?"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Keep your question clear and specific.</p>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={pollDescription}
+                    onChange={(e) => setPollDescription(e.target.value)}
+                    placeholder="Provide more context about the poll..."
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Give community members enough information to make an informed choice.
+                  </p>
+                </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={pollLocation}
+                    onChange={(e) => setPollLocation(e.target.value)}
+                    placeholder="Enter location (e.g., Delhi, Mumbai)"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                  {locationError && (
+                    <p className="text-red-500 text-xs mt-1">{locationError}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Poll Options
+                    </label>
+                    <div className="space-y-2">
+                      {pollOptions.map((option, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => updateOption(index, e.target.value)}
+                            placeholder={`Option ${index + 1}`}
+                            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          {pollOptions.length > 2 && (
+                            <button
+                              onClick={() => removeOption(index)}
+                              className="p-2 text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {pollOptions.length < 10 && (
+                        <button
+                          onClick={addOption}
+                          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 p-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Option
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add at least 2 options, up to a maximum of 10
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Closes On
+                    </label>
+                    <input
+                      type="date"
+                      value={closesOn}
+                      onChange={(e) => setClosesOn(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Choose when this poll will close
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 rounded-full p-1 mt-0.5">
+                      <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-green-800 mb-1">Important information</h4>
+                      <p className="text-sm text-green-700">
+                        Polls should be designed to gather genuine community feedback on 
+                        issues that affect your area. Polls that are misleading or 
+                        designed to push a specific agenda may be removed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={handleCloseModal}
+                    className="px-6 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={editingPoll ? handleUpdatePoll : createPoll}
+                    className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors"
+                  >
+                    {editingPoll ? "Update Poll" : "Create Poll"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Polls Container */}
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">Polls</h1>
+              <p className="text-gray-600">Participate in community polls and make your voice heard.</p>
+            </div>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Create Poll
+            </button>
+          </div>
+
+          <div className="border-b border-gray-200">
+            <div className="flex flex-wrap items-center p-2">
+              {/* Tabs */}
+              <div className="flex">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative ${
+                      activeTab === tab
+                        ? 'text-blue-600'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    {tab}
+                    {activeTab === tab && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {/* Location Filter Dropdown */}
+              <div className="ml-auto flex items-center gap-2 p-2">
+                <span className="text-sm text-gray-700 font-medium">Location:</span>
+                <select
+                  value={selectedLocation}
+                  onChange={e => setSelectedLocation(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  {allLocations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        
+          <div className="p-6 md:p-8">
+            {filteredPolls.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="text-gray-500 mb-4">No polls found with the current filters.</div>
+                <button 
+                  onClick={() => { setActiveTab('Active Polls'); setSelectedLocation('All Locations'); }}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredPolls.map((poll) => (
+                  <div key={poll.id} className="bg-gray-50 p-6 rounded-lg border">
+                    {/* --- UPDATED POLL HEADER --- */}
+                    <div className="flex flex-wrap gap-4 justify-between items-start mb-4">
+                      <div className="flex-grow">
+                        <div className="flex items-center flex-wrap gap-x-3 gap-y-2 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-800">{poll.question}</h3>
+                          <span className="bg-gray-200 text-gray-800 text-xs font-medium px-2.5 py-1 rounded-full">{poll.location}</span>
+                          {poll.isMyPoll && (
+                            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">Your Poll</span>
+                          )}
+                          {(poll.isOfficial || poll.createdBy?.role === "official") && (
+                            <span title="Official Poll" className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                              <svg className="w-4 h-4 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 01.894.553l1.382 2.764 3.05.444a1 1 0 01.554 1.706l-2.207 2.15.521 3.037a1 1 0 01-1.451 1.054L10 12.347l-2.743 1.441a1 1 0 01-1.451-1.054l.521-3.037-2.207-2.15a1 1 0 01.554-1.706l3.05-.444L9.106 2.553A1 1 0 0110 2z" /></svg>
+                              Official
+                            </span>
+                          )}
+                        </div>
+                        {poll.description && <p className="text-sm text-gray-600">{poll.description}</p>}
+                      </div>
+                      {poll.isMyPoll && (
+                        <div className="flex gap-2 items-center flex-shrink-0">
+                          <button
+                            onClick={() => handleEditPoll(poll)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeletePoll(poll.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* --- END OF UPDATED HEADER --- */}
+                  
+                    <div className="space-y-2 mb-4">
+                      {poll.options.map((option, index) => (
+                        <div key={index}>
+                          <button
+                            onClick={() => voteOnPoll(poll.id, index)}
+                            disabled={poll.hasVoted}
+                            className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                              poll.hasVoted 
+                                ? 'bg-white cursor-not-allowed' 
+                                : 'bg-white hover:bg-blue-50 hover:border-blue-300'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span>{option}</span>
+                              {poll.hasVoted && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                                    <div 
+                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                      style={{ 
+                                        width: `${poll.totalVotes > 0 ? (poll.votes[index] / poll.totalVotes) * 100 : 0}%` 
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-sm text-gray-600">{poll.votes[index]}</span>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Closes on: {new Date(poll.closesOn).toLocaleDateString()}</span>
+                      <span>Total votes: {poll.totalVotes}</span>
+                    </div>
+                    {poll.hasVoted && (
+                      <div className="mt-2 text-sm text-green-600 font-medium">
+                        ✓ You have voted on this poll
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Polls;
